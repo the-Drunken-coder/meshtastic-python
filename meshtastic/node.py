@@ -190,8 +190,14 @@ class Node:
         """Block until radio config is received. Returns True if config has been received."""
         return self._timeout.waitForSet(self, attrs=("localConfig", attribute))
 
-    def writeConfig(self, config_name: str) -> Optional[admin_pb2.RadioModeStatus]:
-        """Write the current (edited) localConfig to the device"""
+    def writeConfig(
+        self, config_name: str, *, radioMode: bool = False
+    ) -> Optional[admin_pb2.RadioModeStatus]:
+        """Write edited settings, retaining the saved mode unless explicitly selected.
+
+        Pass radioMode=True when assigning lora.radio_mode directly, or use
+        setRadioMode(). Ordinary tuning writes omit the selection on the wire.
+        """
         if self.localConfig is None:
             our_exit("Error: No localConfig has been read")
 
@@ -208,9 +214,13 @@ class Node:
         elif config_name == "display":
             p.set_config.display.CopyFrom(self.localConfig.display)
         elif config_name == "lora":
-            if self.localConfig.lora.HasField("radio_mode"):
+            if radioMode:
+                if not self.localConfig.lora.HasField("radio_mode"):
+                    raise ValueError("An explicit radio-mode selection is required")
                 self.validateRadioMode(self.localConfig.lora)
             p.set_config.lora.CopyFrom(self.localConfig.lora)
+            if not radioMode:
+                p.set_config.lora.ClearField("radio_mode")
         elif config_name == "bluetooth":
             p.set_config.bluetooth.CopyFrom(self.localConfig.bluetooth)
         elif config_name == "security":
@@ -257,7 +267,7 @@ class Node:
             onResponse = None
         else:
             onResponse = self.onAckNak
-        if config_name == "lora" and self.localConfig.lora.HasField("radio_mode"):
+        if config_name == "lora" and radioMode:
             # A later status query cannot prove a same-mode tuning update was
             # accepted. Wait for the status response correlated with this write.
             status = self._requestRadioModeStatus(p)
@@ -343,7 +353,7 @@ class Node:
         previous.CopyFrom(self.localConfig.lora)
         self.localConfig.lora.radio_mode = selected
         try:
-            status = self.writeConfig("lora")
+            status = self.writeConfig("lora", radioMode=True)
             if status is None:
                 raise RuntimeError("Firmware did not verify the radio configuration save")
             return status
@@ -525,11 +535,9 @@ class Node:
         s = s.replace("=", "").replace("+", "-").replace("/", "_")
         return f"https://meshtastic.org/v/#{s}"
 
-    def setURL(self, url: str, addOnly: bool = False) -> Optional[admin_pb2.RadioModeStatus]:
-        """Set mesh network URL"""
-        if self.localConfig is None or self.channels is None:
-            our_exit("Warning: config or channels not loaded")
-
+    @staticmethod
+    def decodeURL(url: str, addOnly: bool = False) -> apponly_pb2.ChannelSet:
+        """Decode and validate a channel URL without writing any settings."""
         # URLs are of the form https://meshtastic.org/d/#{base64_channel_set}
         # Split on '/#' to find the base64 encoded channel settings
         if addOnly:
@@ -554,7 +562,17 @@ class Node:
         if len(channelSet.settings) == 0:
             our_exit("Warning: There were no settings.")
 
-        self.validateRadioMode(channelSet.lora_config)
+        return channelSet
+
+    def setURL(
+        self, url: str, addOnly: bool = False, *, channelOnly: bool = False
+    ) -> Optional[admin_pb2.RadioModeStatus]:
+        """Set mesh network URL, optionally leaving radio settings unchanged."""
+        if self.localConfig is None or self.channels is None:
+            our_exit("Warning: config or channels not loaded")
+        channelSet = self.decodeURL(url, addOnly)
+        if not channelOnly:
+            self.validateRadioMode(channelSet.lora_config)
 
         if addOnly:
             # Add new channels with names not already present
@@ -586,6 +604,9 @@ class Node:
                 logger.debug(f"Channel i:{i} ch:{ch}")
                 self.writeChannel(ch.index)
                 i = i + 1
+
+        if channelOnly:
+            return None
 
         p = admin_pb2.AdminMessage()
         p.set_config.lora.CopyFrom(channelSet.lora_config)

@@ -747,6 +747,7 @@ def onConnected(interface):
             # Handle the int/float/bool arguments
             pref = None
             fields = set()
+            select_radio_mode = False
             for pref in args.set:
                 found = False
                 field = splitCompoundName(pref[0].lower())[0]
@@ -760,16 +761,19 @@ def onConnected(interface):
                         found = setPref(config, pref[0], pref[1])
                         if found:
                             fields.add(field)
+                            name = splitCompoundName(pref[0])
+                            if field == "lora" and meshtastic.util.camel_to_snake(name[-1]) == "radio_mode":
+                                select_radio_mode = True
                             break
 
             if found:
-                if "lora" in fields:
+                if select_radio_mode:
                     node.validateRadioMode(node.localConfig.lora)
                 print("Writing modified preferences to device")
-                if "lora" in fields and node.localConfig.lora.HasField("radio_mode"):
+                if select_radio_mode:
                     # Explicit mode saves need a durable, correlated response.
                     # Keep this write outside the transaction for other sections.
-                    status = node.writeConfig("lora")
+                    status = node.writeConfig("lora", radioMode=True)
                     if status is not None:
                         printRadioModeStatus(status)
                     fields.remove("lora")
@@ -809,16 +813,44 @@ def onConnected(interface):
                     if is_module
                     else interface.localNode.localConfig
                 )
-                return getattr(config_obj, section) if config_obj.HasField(section) else None
+                if not config_obj.HasField(section):
+                    return None
+                seeded = getattr(config_obj, section)
+                if section == "lora" and not is_module:
+                    # Saved presence is not an import's explicit selection intent.
+                    lora = config_pb2.Config.LoRaConfig()
+                    lora.CopyFrom(seeded)
+                    lora.ClearField("radio_mode")
+                    return lora
+                return seeded
 
             profile = _read_profile(filename, fmt, seed_fn=_seed_config)
 
+            node = interface.localNode
+            # Decode before opening edits. Explicit profile tuning takes precedence
+            # over the URL, while an omitted selection retains a URL's mode request.
+            url_channels = node.decodeURL(profile.channel_url) if profile.channel_url else None
+            effective_lora = config_pb2.Config.LoRaConfig()
+            if url_channels is not None:
+                effective_lora.CopyFrom(url_channels.lora_config)
             if profile.config.HasField("lora"):
-                interface.localNode.validateRadioMode(profile.config.lora)
-            write_lora_separately = profile.config.lora.HasField("radio_mode")
+                url_mode = (
+                    effective_lora.radio_mode if effective_lora.HasField("radio_mode") else None
+                )
+                effective_lora.CopyFrom(profile.config.lora)
+                if url_mode is not None and not effective_lora.HasField("radio_mode"):
+                    effective_lora.radio_mode = url_mode
+            has_lora = profile.config.HasField("lora") or url_channels is not None
+            node.validateRadioMode(effective_lora)
+            write_lora_separately = effective_lora.HasField("radio_mode")
 
             closeNow = True
             interface.getNode(args.dest, False, **getNode_kwargs).beginSettingsTransaction()
+
+            if profile.channel_url:
+                print(f"Setting channel url to {profile.channel_url}")
+                node.setURL(profile.channel_url, channelOnly=True)
+                time.sleep(0.5)
 
             # Owner: combine long_name and short_name into a single setOwner call.
             # NOTE: is_licensed and is_unmessagable are not yet in DeviceProfile;
@@ -879,11 +911,22 @@ def onConnected(interface):
                 localConfig = interface.getNode(args.dest, **getNode_kwargs).localConfig
                 for field in profile.config.DESCRIPTOR.fields:
                     if field.message_type is not None and profile.config.HasField(field.name):
-                        if field.name == "lora" and write_lora_separately:
+                        if field.name == "lora":
                             continue
                         getattr(localConfig, field.name).CopyFrom(getattr(profile.config, field.name))
                         interface.getNode(args.dest, **getNode_kwargs).writeConfig(field.name)
                         time.sleep(0.5)
+
+            if has_lora and not write_lora_separately:
+                retained_mode = (
+                    node.localConfig.lora.radio_mode
+                    if node.localConfig.lora.HasField("radio_mode") else None
+                )
+                node.localConfig.lora.CopyFrom(effective_lora)
+                if retained_mode is not None:
+                    node.localConfig.lora.radio_mode = retained_mode
+                node.writeConfig("lora")
+                time.sleep(0.5)
 
             if profile.HasField("module_config"):
                 moduleConfig = interface.getNode(args.dest, **getNode_kwargs).moduleConfig
@@ -894,15 +937,10 @@ def onConnected(interface):
                         time.sleep(0.5)
 
             interface.getNode(args.dest, False, **getNode_kwargs).commitSettingsTransaction()
-            # A channel URL can also contain an explicit mode selection.
-            if profile.channel_url:
-                print(f"Setting channel url to {profile.channel_url}")
-                interface.getNode(args.dest, **getNode_kwargs).setURL(profile.channel_url)
-                time.sleep(0.5)
             if write_lora_separately:
                 node = interface.localNode
-                node.localConfig.lora.CopyFrom(profile.config.lora)
-                status = node.writeConfig("lora")
+                node.localConfig.lora.CopyFrom(effective_lora)
+                status = node.writeConfig("lora", radioMode=True)
                 if status is not None:
                     printRadioModeStatus(status)
             print("Writing modified configuration to device")

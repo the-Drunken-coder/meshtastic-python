@@ -3,6 +3,7 @@
 import argparse
 import base64
 from collections import deque
+from typing import Optional, Union
 
 import pytest
 
@@ -25,6 +26,8 @@ class AdminWire(MeshInterface):
         self.sent = []
         self.nodes = {}
         self.nodesByNum = {}
+        self.isConnected.set()
+        self.remote_lora = {}
         self.myInfo = mesh_pb2.MyNodeInfo(my_node_num=123)
         self.localNode.nodeNum = 123
         self._getOrCreateByNum(123)["adminSessionPassKey"] = b"test-session"
@@ -42,25 +45,32 @@ class AdminWire(MeshInterface):
         assert packet.decoded.portnum == portnums_pb2.ADMIN_APP
         sent = admin_pb2.AdminMessage.FromString(packet.decoded.payload)
         self.sent.append(sent)
-        if sent.HasField("get_radio_mode_status_request") or (
+        reply: Optional[Union[admin_pb2.AdminMessage, str]]
+        if sent.HasField("get_config_request") and packet.to in self.remote_lora:
+            reply = admin_pb2.AdminMessage()
+            reply.get_config_response.lora.CopyFrom(self.remote_lora[packet.to])
+        elif packet.to in self.remote_lora and sent.HasField("set_config"):
+            reply = "NONE"
+        elif sent.HasField("get_radio_mode_status_request") or (
             sent.HasField("set_config") and sent.set_config.lora.HasField("radio_mode")
         ):
             reply = self.replies.popleft()
-            if reply is None:
-                return
-            response = mesh_pb2.MeshPacket(to=123)
-            setattr(response, "from", 123)
-            response.decoded.request_id = packet.id
-            if isinstance(reply, str):
-                response.decoded.portnum = portnums_pb2.ROUTING_APP
-                response.decoded.payload = mesh_pb2.Routing(
-                    error_reason=mesh_pb2.Routing.Error.Value(reply)
-                ).SerializeToString()
-            else:
-                response.decoded.portnum = portnums_pb2.ADMIN_APP
-                response.decoded.payload = reply.SerializeToString()
-            self._handleFromRadio(mesh_pb2.FromRadio(packet=response).SerializeToString())
-
+        else:
+            return
+        if reply is None:
+            return
+        response = mesh_pb2.MeshPacket(to=123)
+        setattr(response, "from", packet.to)
+        response.decoded.request_id = packet.id
+        if isinstance(reply, str):
+            response.decoded.portnum = portnums_pb2.ROUTING_APP
+            response.decoded.payload = mesh_pb2.Routing(
+                error_reason=mesh_pb2.Routing.Error.Value(reply)
+            ).SerializeToString()
+        else:
+            response.decoded.portnum = portnums_pb2.ADMIN_APP
+            response.decoded.payload = reply.SerializeToString()
+        self._handleFromRadio(mesh_pb2.FromRadio(packet=response).SerializeToString())
 
 def status_reply(**changes):
     """Provide an explicit firmware response according to the versioned contract."""
@@ -197,7 +207,8 @@ def run_cli(monkeypatch, wire, *args):
     mt_config.reset()
     mt_config.parser = argparse.ArgumentParser(add_help=False)
     initParser()
-    mt_config.args.dest = "^all"
+    if mt_config.args.dest is None:
+        mt_config.args.dest = "^all"
     onConnected(wire)
 
 
@@ -374,3 +385,138 @@ def test_node_signal_metadata_clears_unavailable_flag_when_lora_returns():
     assert wire.nodesByNum[456]["snrUnavailable"]
     _receiveInfoUpdate(wire, {"from": 456, "rxSnr": 3})
     assert not wire.nodesByNum[456]["snrUnavailable"]
+
+
+def test_remote_lora_edit_retains_saved_mode_without_mode_status_query():
+    """Unrelated remote tuning writes preserve a saved explicit LoRa selection."""
+    wire = AdminWire([])
+    wire._getOrCreateByNum(456)["adminSessionPassKey"] = b"remote-session"
+    remote = Node(wire, 456)
+    remote.localConfig.lora.radio_mode = config_pb2.Config.LoRaConfig.LORA
+    remote.localConfig.lora.hop_limit = 4
+
+    remote.writeConfig("lora")
+
+    assert len(wire.sent) == 1
+    assert wire.sent[0].set_config.lora.hop_limit == 4
+    assert not wire.sent[0].set_config.lora.HasField("radio_mode")
+    assert remote.localConfig.lora.HasField("radio_mode")
+
+
+@pytest.mark.parametrize("selection", [False, True])
+def test_cli_remote_lora_edit_distinguishes_mode_selection(monkeypatch, selection):
+    """Saved selection does not turn ordinary remote configuration into a mode change."""
+    wire = AdminWire([])
+    wire.remote_lora[456] = config_pb2.Config.LoRaConfig(
+        radio_mode=config_pb2.Config.LoRaConfig.LORA, hop_limit=3,
+    )
+    wire._getOrCreateByNum(456)["adminSessionPassKey"] = b"remote-session"
+    pref = "lora.radio_mode" if selection else "lora.hop_limit"
+    value = "FLRC" if selection else "4"
+    if selection:
+        with pytest.raises(SystemExit):
+            run_cli(monkeypatch, wire, "--dest", "!000001c8", "--set", pref, value)
+        assert all(not p.HasField("set_config") for p in wire.sent)
+    else:
+        run_cli(monkeypatch, wire, "--dest", "!000001c8", "--set", pref, value)
+        writes = [p.set_config.lora for p in wire.sent if p.HasField("set_config")]
+        assert len(writes) == 1
+        assert writes[0].hop_limit == 4
+        assert not writes[0].HasField("radio_mode")
+    assert all(not p.HasField("get_radio_mode_status_request") for p in wire.sent)
+
+
+def channel_url(**lora_fields):
+    """Encode a real channel set for the profile importer."""
+    channels = apponly_pb2.ChannelSet()
+    channels.settings.add(name="test")
+    channels.lora_config.CopyFrom(config_pb2.Config.LoRaConfig(**lora_fields))
+    return "https://meshtastic.org/e/#" + base64.urlsafe_b64encode(channels.SerializeToString()).decode()
+
+
+@pytest.mark.parametrize("saved_mode", [None, config_pb2.Config.LoRaConfig.LORA])
+def test_legacy_import_explicit_lora_settings_override_channel_url(monkeypatch, tmp_path, saved_mode):
+    """A legacy profile keeps explicit tuning authoritative over its channel URL."""
+    profile = tmp_path / "radio.yaml"
+    url = channel_url(modem_preset=config_pb2.Config.LoRaConfig.MEDIUM_FAST)
+    profile.write_text(f"channel_url: {url}\nconfig:\n  lora:\n    modem_preset: LONG_FAST\n")
+    wire = AdminWire([])
+    wire.localNode.channels = [channel_pb2.Channel(index=0)]
+    if saved_mode is not None:
+        wire.localNode.localConfig.lora.radio_mode = saved_mode
+
+    run_cli(monkeypatch, wire, "--configure", str(profile))
+
+    writes = [p.set_config.lora for p in wire.sent if p.set_config.HasField("lora")]
+    assert writes[-1].modem_preset == config_pb2.Config.LoRaConfig.LONG_FAST
+    assert not writes[-1].HasField("radio_mode")
+    if saved_mode is not None:
+        assert wire.localNode.localConfig.lora.HasField("radio_mode")
+        assert wire.localNode.localConfig.lora.radio_mode == saved_mode
+
+
+def test_explicit_remote_api_mode_write_is_rejected():
+    """Direct API mode selection cannot use ordinary remote administration."""
+    wire = AdminWire([])
+    remote = Node(wire, 456)
+    remote.localConfig.lora.radio_mode = config_pb2.Config.LoRaConfig.FLRC
+    with pytest.raises(ValueError, match="only on the local node"):
+        remote.writeConfig("lora", radioMode=True)
+    assert not wire.sent
+
+
+@pytest.mark.parametrize("tuning", ["", "config:\n  lora:\n    modem_preset: LONG_FAST\n"])
+def test_import_url_mode_is_verified_after_transaction(monkeypatch, tmp_path, tuning):
+    """A URL-only selection survives saved-mode seeding and explicit tuning overrides."""
+    profile = tmp_path / "radio.yaml"
+    url = channel_url(
+        region=config_pb2.Config.LoRaConfig.US, radio_mode=config_pb2.Config.LoRaConfig.FLRC,
+        modem_preset=config_pb2.Config.LoRaConfig.MEDIUM_FAST,
+    )
+    profile.write_text(f"channel_url: {url}\n{tuning}")
+    wire = AdminWire([
+        status_reply(), status_reply(), status_reply(configured_mode=1, restart_pending=True),
+    ])
+    wire.localNode.channels = [channel_pb2.Channel(index=0)]
+    wire.localNode.localConfig.lora.radio_mode = config_pb2.Config.LoRaConfig.LORA
+
+    run_cli(monkeypatch, wire, "--configure", str(profile), "--reboot")
+
+    writes = [p.set_config.lora for p in wire.sent if p.set_config.HasField("lora")]
+    assert len(writes) == 1
+    assert writes[0].radio_mode == config_pb2.Config.LoRaConfig.FLRC
+    expected = config_pb2.Config.LoRaConfig.LONG_FAST if tuning else config_pb2.Config.LoRaConfig.MEDIUM_FAST
+    assert writes[0].modem_preset == expected
+    payloads = [p.WhichOneof("payload_variant") for p in wire.sent]
+    assert payloads[0] == "get_radio_mode_status_request"
+    assert payloads.index("commit_edit_settings") < payloads.index("set_config") < payloads.index("reboot_seconds")
+
+
+def test_import_unsupported_url_mode_cannot_write_channels_or_start_edits(monkeypatch, tmp_path):
+    """Preflight includes mode requests supplied only by a profile's channel URL."""
+    profile = tmp_path / "radio.yaml"
+    url = channel_url(region=config_pb2.Config.LoRaConfig.US, radio_mode=config_pb2.Config.LoRaConfig.FLRC)
+    profile.write_text(f"channel_url: {url}\nconfig:\n  device:\n    role: CLIENT\n")
+    wire = AdminWire(["BAD_REQUEST"])
+    wire.localNode.channels = [channel_pb2.Channel(index=0)]
+
+    with pytest.raises(SystemExit):
+        run_cli(monkeypatch, wire, "--configure", str(profile), "--reboot")
+
+    assert [p.WhichOneof("payload_variant") for p in wire.sent] == ["get_radio_mode_status_request"]
+
+
+def test_import_explicit_mode_overrides_url_mode(monkeypatch, tmp_path):
+    """The final explicit profile selection is authoritative for preflight and save."""
+    profile = tmp_path / "radio.yaml"
+    url = channel_url(region=config_pb2.Config.LoRaConfig.US, radio_mode=config_pb2.Config.LoRaConfig.FLRC)
+    profile.write_text(f"channel_url: {url}\nconfig:\n  lora:\n    radio_mode: LORA\n")
+    wire = AdminWire([status_reply(flrc_supported=False), status_reply(flrc_supported=False), status_reply()])
+    wire.localNode.channels = [channel_pb2.Channel(index=0)]
+
+    run_cli(monkeypatch, wire, "--configure", str(profile))
+
+    writes = [p.set_config.lora for p in wire.sent if p.set_config.HasField("lora")]
+    assert len(writes) == 1
+    assert writes[0].HasField("radio_mode")
+    assert writes[0].radio_mode == config_pb2.Config.LoRaConfig.LORA

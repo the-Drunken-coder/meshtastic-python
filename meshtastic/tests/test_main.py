@@ -2337,7 +2337,8 @@ def test_main_export_config_binary_round_trip(tmp_path, capsys):
     iface = MagicMock(autospec=SerialInterface)
     iface.getLongName.return_value = "Round Trip"
     iface.getShortName.return_value = "RT"
-    iface.localNode.getURL.return_value = "https://meshtastic.org/e/#rt"
+    iface.localNode.getURL.return_value = "https://meshtastic.org/e/#CgQaAlJU"
+    iface.localNode.decodeURL.side_effect = Node.decodeURL
     iface.getCannedMessage.return_value = "Yes|No"
     iface.getRingtone.return_value = None
     iface.getMyNodeInfo.return_value = {

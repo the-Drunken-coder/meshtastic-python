@@ -148,7 +148,7 @@ Brown: Team.ValueType  # 14
 """
 Brown
 """
-global___Team = Team
+Global___Team: typing_extensions.TypeAlias = Team
 
 class _MemberRole:
     ValueType = typing.NewType("ValueType", builtins.int)
@@ -234,7 +234,7 @@ K9: MemberRole.ValueType  # 8
 """
 Doggo
 """
-global___MemberRole = MemberRole
+Global___MemberRole: typing_extensions.TypeAlias = MemberRole
 
 class _CotHow:
     ValueType = typing.NewType("ValueType", builtins.int)
@@ -313,7 +313,7 @@ CotHow_m_s: CotHow.ValueType  # 7
 """
 Machine simulated
 """
-global___CotHow = CotHow
+Global___CotHow: typing_extensions.TypeAlias = CotHow
 
 class _CotType:
     ValueType = typing.NewType("ValueType", builtins.int)
@@ -810,7 +810,7 @@ class _CotTypeEnumTypeWrapper(google.protobuf.internal.enum_type_wrapper._EnumTy
     CotType_m_t_t: _CotType.ValueType  # 125
     """-- TAKTALK plugin shapes --
     CoT types unique to the TAKTALK ATAK plugin. Note `y-` has a literal
-    trailing dash and no second atom — that's the wire format ATAK emits
+    trailing dash and no second atom - that's the wire format ATAK emits
     for TAKTALK room broadcasts. The CotType enum encodes the literal
     string verbatim (CotType_y -> "y-") so receivers reconstruct the
     original event type byte-for-byte without consulting cot_type_str.
@@ -824,7 +824,7 @@ class _CotTypeEnumTypeWrapper(google.protobuf.internal.enum_type_wrapper._EnumTy
     y-: TAKTALK room/membership broadcast. Payload carried via the
     TakTalkRoomData typed variant (sender_callsign, room_id, room_name,
     participants). The CoT type literally has a trailing dash and no
-    second atom — not a typo.
+    second atom - not a typo.
     """
 
 class CotType(_CotType, metaclass=_CotTypeEnumTypeWrapper):
@@ -1323,7 +1323,7 @@ TaskRequest typed variant.
 CotType_m_t_t: CotType.ValueType  # 125
 """-- TAKTALK plugin shapes --
 CoT types unique to the TAKTALK ATAK plugin. Note `y-` has a literal
-trailing dash and no second atom — that's the wire format ATAK emits
+trailing dash and no second atom - that's the wire format ATAK emits
 for TAKTALK room broadcasts. The CotType enum encodes the literal
 string verbatim (CotType_y -> "y-") so receivers reconstruct the
 original event type byte-for-byte without consulting cot_type_str.
@@ -1337,9 +1337,9 @@ CotType_y: CotType.ValueType  # 126
 y-: TAKTALK room/membership broadcast. Payload carried via the
 TakTalkRoomData typed variant (sender_callsign, room_id, room_name,
 participants). The CoT type literally has a trailing dash and no
-second atom — not a typo.
+second atom - not a typo.
 """
-global___CotType = CotType
+Global___CotType: typing_extensions.TypeAlias = CotType
 
 class _GeoPointSource:
     ValueType = typing.NewType("ValueType", builtins.int)
@@ -1385,7 +1385,7 @@ GeoPointSource_NETWORK: GeoPointSource.ValueType  # 3
 """
 Network/external
 """
-global___GeoPointSource = GeoPointSource
+Global___GeoPointSource: typing_extensions.TypeAlias = GeoPointSource
 
 @typing.final
 class TAKPacket(google.protobuf.message.Message):
@@ -1412,31 +1412,31 @@ class TAKPacket(google.protobuf.message.Message):
     May be compressed / truncated by the sender (EUD)
     """
     @property
-    def contact(self) -> global___Contact:
+    def contact(self) -> Global___Contact:
         """
         The contact / callsign for ATAK user
         """
 
     @property
-    def group(self) -> global___Group:
+    def group(self) -> Global___Group:
         """
         The group for ATAK user
         """
 
     @property
-    def status(self) -> global___Status:
+    def status(self) -> Global___Status:
         """
         The status of the ATAK EUD
         """
 
     @property
-    def pli(self) -> global___PLI:
+    def pli(self) -> Global___PLI:
         """
         TAK position report
         """
 
     @property
-    def chat(self) -> global___GeoChat:
+    def chat(self) -> Global___GeoChat:
         """
         ATAK GeoChat message
         """
@@ -1445,18 +1445,18 @@ class TAKPacket(google.protobuf.message.Message):
         self,
         *,
         is_compressed: builtins.bool = ...,
-        contact: global___Contact | None = ...,
-        group: global___Group | None = ...,
-        status: global___Status | None = ...,
-        pli: global___PLI | None = ...,
-        chat: global___GeoChat | None = ...,
+        contact: Global___Contact | None = ...,
+        group: Global___Group | None = ...,
+        status: Global___Status | None = ...,
+        pli: Global___PLI | None = ...,
+        chat: Global___GeoChat | None = ...,
         detail: builtins.bytes = ...,
     ) -> None: ...
     def HasField(self, field_name: typing.Literal["chat", b"chat", "contact", b"contact", "detail", b"detail", "group", b"group", "payload_variant", b"payload_variant", "pli", b"pli", "status", b"status"]) -> builtins.bool: ...
     def ClearField(self, field_name: typing.Literal["chat", b"chat", "contact", b"contact", "detail", b"detail", "group", b"group", "is_compressed", b"is_compressed", "payload_variant", b"payload_variant", "pli", b"pli", "status", b"status"]) -> None: ...
     def WhichOneof(self, oneof_group: typing.Literal["payload_variant", b"payload_variant"]) -> typing.Literal["pli", "chat", "detail"] | None: ...
 
-global___TAKPacket = TAKPacket
+Global___TAKPacket: typing_extensions.TypeAlias = TAKPacket
 
 @typing.final
 class GeoChat(google.protobuf.message.Message):
@@ -1523,7 +1523,7 @@ class GeoChat(google.protobuf.message.Message):
     receipt_type so receivers can match the ack back to the original
     outbound GeoChat by its event uid.
     """
-    receipt_type: global___GeoChat.ReceiptType.ValueType
+    receipt_type: Global___GeoChat.ReceiptType.ValueType
     """
     Receipt kind discriminator. See ReceiptType doc. Default ReceiptType_None
     means this is a regular chat message, not a receipt.
@@ -1568,7 +1568,7 @@ class GeoChat(google.protobuf.message.Message):
         to: builtins.str | None = ...,
         to_callsign: builtins.str | None = ...,
         receipt_for_uid: builtins.str = ...,
-        receipt_type: global___GeoChat.ReceiptType.ValueType = ...,
+        receipt_type: Global___GeoChat.ReceiptType.ValueType = ...,
         lang: builtins.str | None = ...,
         room_id: builtins.str | None = ...,
         voice_profile_id: builtins.str | None = ...,
@@ -1586,7 +1586,7 @@ class GeoChat(google.protobuf.message.Message):
     @typing.overload
     def WhichOneof(self, oneof_group: typing.Literal["_voice_profile_id", b"_voice_profile_id"]) -> typing.Literal["voice_profile_id"] | None: ...
 
-global___GeoChat = GeoChat
+Global___GeoChat: typing_extensions.TypeAlias = GeoChat
 
 @typing.final
 class Group(google.protobuf.message.Message):
@@ -1599,11 +1599,11 @@ class Group(google.protobuf.message.Message):
 
     ROLE_FIELD_NUMBER: builtins.int
     TEAM_FIELD_NUMBER: builtins.int
-    role: global___MemberRole.ValueType
+    role: Global___MemberRole.ValueType
     """
     Role of the group member
     """
-    team: global___Team.ValueType
+    team: Global___Team.ValueType
     """
     Team (color)
     Default Cyan
@@ -1611,12 +1611,12 @@ class Group(google.protobuf.message.Message):
     def __init__(
         self,
         *,
-        role: global___MemberRole.ValueType = ...,
-        team: global___Team.ValueType = ...,
+        role: Global___MemberRole.ValueType = ...,
+        team: Global___Team.ValueType = ...,
     ) -> None: ...
     def ClearField(self, field_name: typing.Literal["role", b"role", "team", b"team"]) -> None: ...
 
-global___Group = Group
+Global___Group: typing_extensions.TypeAlias = Group
 
 @typing.final
 class Status(google.protobuf.message.Message):
@@ -1639,7 +1639,7 @@ class Status(google.protobuf.message.Message):
     ) -> None: ...
     def ClearField(self, field_name: typing.Literal["battery", b"battery"]) -> None: ...
 
-global___Status = Status
+Global___Status: typing_extensions.TypeAlias = Status
 
 @typing.final
 class Contact(google.protobuf.message.Message):
@@ -1670,7 +1670,7 @@ class Contact(google.protobuf.message.Message):
     ) -> None: ...
     def ClearField(self, field_name: typing.Literal["callsign", b"callsign", "device_callsign", b"device_callsign"]) -> None: ...
 
-global___Contact = Contact
+Global___Contact: typing_extensions.TypeAlias = Contact
 
 @typing.final
 class PLI(google.protobuf.message.Message):
@@ -1718,7 +1718,7 @@ class PLI(google.protobuf.message.Message):
     ) -> None: ...
     def ClearField(self, field_name: typing.Literal["altitude", b"altitude", "course", b"course", "latitude_i", b"latitude_i", "longitude_i", b"longitude_i", "speed", b"speed"]) -> None: ...
 
-global___PLI = PLI
+Global___PLI: typing_extensions.TypeAlias = PLI
 
 @typing.final
 class AircraftTrack(google.protobuf.message.Message):
@@ -1789,7 +1789,7 @@ class AircraftTrack(google.protobuf.message.Message):
     ) -> None: ...
     def ClearField(self, field_name: typing.Literal["aircraft_type", b"aircraft_type", "category", b"category", "cot_host_id", b"cot_host_id", "flight", b"flight", "gps", b"gps", "icao", b"icao", "registration", b"registration", "rssi_x10", b"rssi_x10", "squawk", b"squawk"]) -> None: ...
 
-global___AircraftTrack = AircraftTrack
+Global___AircraftTrack: typing_extensions.TypeAlias = AircraftTrack
 
 @typing.final
 class CotGeoPoint(google.protobuf.message.Message):
@@ -1808,10 +1808,10 @@ class CotGeoPoint(google.protobuf.message.Message):
     hundred meters of the anchor has per-vertex deltas in the ±10^4 range.
     Under sint32+zigzag those encode as 2 bytes each (tag+varint), versus the
     4 bytes that sfixed32 would always require. At 32 vertices that is ~128
-    bytes of savings — the difference between fitting under the LoRa MTU or
+    bytes of savings - the difference between fitting under the LoRa MTU or
     not. Absolute coordinates (values ~10^9) would cost sint32 varint 5 bytes
     per field, which is why TAKPacketV2's top-level latitude_i / longitude_i
-    stay sfixed32 — only small values win with sint32.
+    stay sfixed32 - only small values win with sint32.
     """
 
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
@@ -1835,7 +1835,7 @@ class CotGeoPoint(google.protobuf.message.Message):
     ) -> None: ...
     def ClearField(self, field_name: typing.Literal["lat_delta_i", b"lat_delta_i", "lon_delta_i", b"lon_delta_i"]) -> None: ...
 
-global___CotGeoPoint = CotGeoPoint
+Global___CotGeoPoint: typing_extensions.TypeAlias = CotGeoPoint
 
 @typing.final
 class DrawnShape(google.protobuf.message.Message):
@@ -1896,7 +1896,7 @@ class DrawnShape(google.protobuf.message.Message):
         Kind_Ellipse: DrawnShape._Kind.ValueType  # 8
         """
         u-d-c-e: Ellipse with distinct major/minor axes (same storage as
-        Kind_Circle — uses major_cm/minor_cm/angle_deg — but receivers
+        Kind_Circle - uses major_cm/minor_cm/angle_deg - but receivers
         render it as a non-circular ellipse rather than a round circle).
         """
         Kind_Vehicle2D: DrawnShape._Kind.ValueType  # 9
@@ -1951,7 +1951,7 @@ class DrawnShape(google.protobuf.message.Message):
     Kind_Ellipse: DrawnShape.Kind.ValueType  # 8
     """
     u-d-c-e: Ellipse with distinct major/minor axes (same storage as
-    Kind_Circle — uses major_cm/minor_cm/angle_deg — but receivers
+    Kind_Circle - uses major_cm/minor_cm/angle_deg - but receivers
     render it as a non-circular ellipse rather than a round circle).
     """
     Kind_Vehicle2D: DrawnShape.Kind.ValueType  # 9
@@ -1973,7 +1973,7 @@ class DrawnShape(google.protobuf.message.Message):
         DESCRIPTOR: google.protobuf.descriptor.EnumDescriptor
         StyleMode_Unspecified: DrawnShape._StyleMode.ValueType  # 0
         """
-        Unspecified — receiver infers from which color fields are non-zero.
+        Unspecified - receiver infers from which color fields are non-zero.
         """
         StyleMode_StrokeOnly: DrawnShape._StyleMode.ValueType  # 1
         """
@@ -2005,7 +2005,7 @@ class DrawnShape(google.protobuf.message.Message):
 
     StyleMode_Unspecified: DrawnShape.StyleMode.ValueType  # 0
     """
-    Unspecified — receiver infers from which color fields are non-zero.
+    Unspecified - receiver infers from which color fields are non-zero.
     """
     StyleMode_StrokeOnly: DrawnShape.StyleMode.ValueType  # 1
     """
@@ -2041,11 +2041,11 @@ class DrawnShape(google.protobuf.message.Message):
     BULLSEYE_BEARING_REF_FIELD_NUMBER: builtins.int
     BULLSEYE_FLAGS_FIELD_NUMBER: builtins.int
     BULLSEYE_UID_REF_FIELD_NUMBER: builtins.int
-    kind: global___DrawnShape.Kind.ValueType
+    kind: Global___DrawnShape.Kind.ValueType
     """
     Shape kind (circle, rectangle, freeform, etc.)
     """
-    style: global___DrawnShape.StyleMode.ValueType
+    style: Global___DrawnShape.StyleMode.ValueType
     """
     Explicit stroke/fill/both discriminator. See StyleMode doc.
     """
@@ -2063,7 +2063,7 @@ class DrawnShape(google.protobuf.message.Message):
     0 and 360 are equivalent rotations. In proto3, an unset uint32 reads
     as 0, so senders should emit 0 when the angle is unspecified.
     """
-    stroke_color: global___Team.ValueType
+    stroke_color: Global___Team.ValueType
     """
     Stroke color as a named palette entry from the Team enum. If
     Unspecifed_Color, the exact ARGB is carried in stroke_argb.
@@ -2081,7 +2081,7 @@ class DrawnShape(google.protobuf.message.Message):
     Stroke weight in tenths of a unit (e.g. 30 = 3.0). Typical ATAK
     range 10..60.
     """
-    fill_color: global___Team.ValueType
+    fill_color: Global___Team.ValueType
     """
     Fill color as a named palette entry. See stroke_color docs.
     Valid only when style is FillOnly or StrokeAndFill.
@@ -2126,15 +2126,15 @@ class DrawnShape(google.protobuf.message.Message):
     def __init__(
         self,
         *,
-        kind: global___DrawnShape.Kind.ValueType = ...,
-        style: global___DrawnShape.StyleMode.ValueType = ...,
+        kind: Global___DrawnShape.Kind.ValueType = ...,
+        style: Global___DrawnShape.StyleMode.ValueType = ...,
         major_cm: builtins.int = ...,
         minor_cm: builtins.int = ...,
         angle_deg: builtins.int = ...,
-        stroke_color: global___Team.ValueType = ...,
+        stroke_color: Global___Team.ValueType = ...,
         stroke_argb: builtins.int = ...,
         stroke_weight_x10: builtins.int = ...,
-        fill_color: global___Team.ValueType = ...,
+        fill_color: Global___Team.ValueType = ...,
         fill_argb: builtins.int = ...,
         labels_on: builtins.bool = ...,
         vertex_lat_deltas: collections.abc.Iterable[builtins.int] | None = ...,
@@ -2147,7 +2147,7 @@ class DrawnShape(google.protobuf.message.Message):
     ) -> None: ...
     def ClearField(self, field_name: typing.Literal["angle_deg", b"angle_deg", "bullseye_bearing_ref", b"bullseye_bearing_ref", "bullseye_distance_dm", b"bullseye_distance_dm", "bullseye_flags", b"bullseye_flags", "bullseye_uid_ref", b"bullseye_uid_ref", "fill_argb", b"fill_argb", "fill_color", b"fill_color", "kind", b"kind", "labels_on", b"labels_on", "major_cm", b"major_cm", "minor_cm", b"minor_cm", "stroke_argb", b"stroke_argb", "stroke_color", b"stroke_color", "stroke_weight_x10", b"stroke_weight_x10", "style", b"style", "truncated", b"truncated", "vertex_lat_deltas", b"vertex_lat_deltas", "vertex_lon_deltas", b"vertex_lon_deltas"]) -> None: ...
 
-global___DrawnShape = DrawnShape
+Global___DrawnShape: typing_extensions.TypeAlias = DrawnShape
 
 @typing.final
 class Marker(google.protobuf.message.Message):
@@ -2171,7 +2171,7 @@ class Marker(google.protobuf.message.Message):
         DESCRIPTOR: google.protobuf.descriptor.EnumDescriptor
         Kind_Unspecified: Marker._Kind.ValueType  # 0
         """
-        Unspecified — fall back to TAKPacketV2.cot_type_id
+        Unspecified - fall back to TAKPacketV2.cot_type_id
         """
         Kind_Spot: Marker._Kind.ValueType  # 1
         """
@@ -2233,7 +2233,7 @@ class Marker(google.protobuf.message.Message):
 
     Kind_Unspecified: Marker.Kind.ValueType  # 0
     """
-    Unspecified — fall back to TAKPacketV2.cot_type_id
+    Unspecified - fall back to TAKPacketV2.cot_type_id
     """
     Kind_Spot: Marker.Kind.ValueType  # 1
     """
@@ -2294,11 +2294,11 @@ class Marker(google.protobuf.message.Message):
     PARENT_TYPE_FIELD_NUMBER: builtins.int
     PARENT_CALLSIGN_FIELD_NUMBER: builtins.int
     ICONSET_FIELD_NUMBER: builtins.int
-    kind: global___Marker.Kind.ValueType
+    kind: Global___Marker.Kind.ValueType
     """
     Marker kind
     """
-    color: global___Team.ValueType
+    color: Global___Team.ValueType
     """
     Marker color as a named palette entry. If Unspecifed_Color, the exact
     ARGB is in color_argb.
@@ -2337,8 +2337,8 @@ class Marker(google.protobuf.message.Message):
     def __init__(
         self,
         *,
-        kind: global___Marker.Kind.ValueType = ...,
-        color: global___Team.ValueType = ...,
+        kind: Global___Marker.Kind.ValueType = ...,
+        color: Global___Team.ValueType = ...,
         color_argb: builtins.int = ...,
         readiness: builtins.bool = ...,
         parent_uid: builtins.str = ...,
@@ -2348,7 +2348,7 @@ class Marker(google.protobuf.message.Message):
     ) -> None: ...
     def ClearField(self, field_name: typing.Literal["color", b"color", "color_argb", b"color_argb", "iconset", b"iconset", "kind", b"kind", "parent_callsign", b"parent_callsign", "parent_type", b"parent_type", "parent_uid", b"parent_uid", "readiness", b"readiness"]) -> None: ...
 
-global___Marker = Marker
+Global___Marker: typing_extensions.TypeAlias = Marker
 
 @typing.final
 class RangeAndBearing(google.protobuf.message.Message):
@@ -2357,7 +2357,7 @@ class RangeAndBearing(google.protobuf.message.Message):
 
     Covers CoT type u-rb-a. The anchor position is on
     TAKPacketV2.latitude_i/longitude_i; the target endpoint is carried as a
-    CotGeoPoint — same delta-from-anchor encoding used by DrawnShape.vertices
+    CotGeoPoint - same delta-from-anchor encoding used by DrawnShape.vertices
     so a self-anchored RAB (common case) encodes in zero bytes.
     """
 
@@ -2382,7 +2382,7 @@ class RangeAndBearing(google.protobuf.message.Message):
     """
     Bearing in degrees * 100 (0..36000).
     """
-    stroke_color: global___Team.ValueType
+    stroke_color: Global___Team.ValueType
     """
     Stroke color as a Team palette entry. See DrawnShape.stroke_color doc.
     """
@@ -2395,7 +2395,7 @@ class RangeAndBearing(google.protobuf.message.Message):
     Stroke weight * 10 (e.g. 30 = 3.0).
     """
     @property
-    def anchor(self) -> global___CotGeoPoint:
+    def anchor(self) -> Global___CotGeoPoint:
         """
         Target/anchor endpoint (delta-encoded from TAKPacketV2.latitude_i/longitude_i).
         """
@@ -2403,18 +2403,18 @@ class RangeAndBearing(google.protobuf.message.Message):
     def __init__(
         self,
         *,
-        anchor: global___CotGeoPoint | None = ...,
+        anchor: Global___CotGeoPoint | None = ...,
         anchor_uid: builtins.str = ...,
         range_cm: builtins.int = ...,
         bearing_cdeg: builtins.int = ...,
-        stroke_color: global___Team.ValueType = ...,
+        stroke_color: Global___Team.ValueType = ...,
         stroke_argb: builtins.int = ...,
         stroke_weight_x10: builtins.int = ...,
     ) -> None: ...
     def HasField(self, field_name: typing.Literal["anchor", b"anchor"]) -> builtins.bool: ...
     def ClearField(self, field_name: typing.Literal["anchor", b"anchor", "anchor_uid", b"anchor_uid", "bearing_cdeg", b"bearing_cdeg", "range_cm", b"range_cm", "stroke_argb", b"stroke_argb", "stroke_color", b"stroke_color", "stroke_weight_x10", b"stroke_weight_x10"]) -> None: ...
 
-global___RangeAndBearing = RangeAndBearing
+Global___RangeAndBearing: typing_extensions.TypeAlias = RangeAndBearing
 
 @typing.final
 class Route(google.protobuf.message.Message):
@@ -2553,7 +2553,7 @@ class Route(google.protobuf.message.Message):
         Link role: 0 = waypoint (b-m-p-w), 1 = checkpoint (b-m-p-c).
         """
         @property
-        def point(self) -> global___CotGeoPoint:
+        def point(self) -> Global___CotGeoPoint:
             """
             Waypoint position (delta-encoded from TAKPacketV2.latitude_i/longitude_i).
             """
@@ -2561,7 +2561,7 @@ class Route(google.protobuf.message.Message):
         def __init__(
             self,
             *,
-            point: global___CotGeoPoint | None = ...,
+            point: Global___CotGeoPoint | None = ...,
             uid: builtins.str = ...,
             callsign: builtins.str = ...,
             link_type: builtins.int = ...,
@@ -2575,11 +2575,11 @@ class Route(google.protobuf.message.Message):
     STROKE_WEIGHT_X10_FIELD_NUMBER: builtins.int
     LINKS_FIELD_NUMBER: builtins.int
     TRUNCATED_FIELD_NUMBER: builtins.int
-    method: global___Route.Method.ValueType
+    method: Global___Route.Method.ValueType
     """
     Travel method
     """
-    direction: global___Route.Direction.ValueType
+    direction: Global___Route.Direction.ValueType
     """
     Direction (infil/exfil)
     """
@@ -2596,7 +2596,7 @@ class Route(google.protobuf.message.Message):
     True if the sender truncated `links` to fit the pool.
     """
     @property
-    def links(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___Route.Link]:
+    def links(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[Global___Route.Link]:
         """
         Ordered list of route control points. Capped at 16.
         """
@@ -2604,16 +2604,16 @@ class Route(google.protobuf.message.Message):
     def __init__(
         self,
         *,
-        method: global___Route.Method.ValueType = ...,
-        direction: global___Route.Direction.ValueType = ...,
+        method: Global___Route.Method.ValueType = ...,
+        direction: Global___Route.Direction.ValueType = ...,
         prefix: builtins.str = ...,
         stroke_weight_x10: builtins.int = ...,
-        links: collections.abc.Iterable[global___Route.Link] | None = ...,
+        links: collections.abc.Iterable[Global___Route.Link] | None = ...,
         truncated: builtins.bool = ...,
     ) -> None: ...
     def ClearField(self, field_name: typing.Literal["direction", b"direction", "links", b"links", "method", b"method", "prefix", b"prefix", "stroke_weight_x10", b"stroke_weight_x10", "truncated", b"truncated"]) -> None: ...
 
-global___Route = Route
+Global___Route: typing_extensions.TypeAlias = Route
 
 @typing.final
 class CasevacReport(google.protobuf.message.Message):
@@ -2755,7 +2755,7 @@ class CasevacReport(google.protobuf.message.Message):
     ENEMY_FIELD_NUMBER: builtins.int
     HLZ_REMARKS_FIELD_NUMBER: builtins.int
     ZMIST_FIELD_NUMBER: builtins.int
-    precedence: global___CasevacReport.Precedence.ValueType
+    precedence: Global___CasevacReport.Precedence.ValueType
     """
     Line 3: precedence / urgency.
     """
@@ -2776,11 +2776,11 @@ class CasevacReport(google.protobuf.message.Message):
     """
     Line 5: number of ambulatory (walking-wounded) patients.
     """
-    security: global___CasevacReport.Security.ValueType
+    security: Global___CasevacReport.Security.ValueType
     """
     Line 6: security situation at the PZ.
     """
-    hlz_marking: global___CasevacReport.HlzMarking.ValueType
+    hlz_marking: Global___CasevacReport.HlzMarking.ValueType
     """
     Line 7: HLZ marking method.
     """
@@ -2812,7 +2812,7 @@ class CasevacReport(google.protobuf.message.Message):
     "Victor 6"). Capped tight in options.
     """
     title: builtins.str
-    """--- v2.x medline extensions (tags 16–33) --------------------------------
+    """--- v2.x medline extensions (tags 16-33) --------------------------------
 
     Fields 16+ cost a 2-byte tag instead of 1 byte, but they're usually
     sparse so the on-wire delta is modest when most stay unset. A fully
@@ -2829,14 +2829,14 @@ class CasevacReport(google.protobuf.message.Message):
     """
     medline_remarks: builtins.str
     """
-    Primary medline free-text — the single most clinically important line
+    Primary medline free-text - the single most clinically important line
     on a MEDLINE form (e.g. "2 urgent litter patients, smoke on approach").
     MUST be preserved under MTU pressure as long as any casevac is sent.
     """
     urgent_count: builtins.int
     """
     Line 3 (newer ATAK format): patient counts by precedence level.
-    Coexists with the enum-style `precedence` field (tag 1) — older ATAK
+    Coexists with the enum-style `precedence` field (tag 1) - older ATAK
     emits a single enum, newer ATAK emits these counts, and both can be
     set simultaneously. Senders populate whichever style(s) the source
     XML had; receivers prefer counts when non-zero.
@@ -2902,10 +2902,10 @@ class CasevacReport(google.protobuf.message.Message):
     (e.g. "Primary HLZ is soccer field").
     """
     @property
-    def zmist(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___ZMistEntry]:
+    def zmist(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[Global___ZMistEntry]:
         """
         Per-patient clinical records. Each entry is one patient's ZMIST card
-        (Zap number / Mechanism / Injuries / Signs / Treatment). Repeatable —
+        (Zap number / Mechanism / Injuries / Signs / Treatment). Repeatable -
         a mass-casualty event can carry 1-6 entries in practice, limited by
         the 237 B LoRa MTU.
         """
@@ -2913,12 +2913,12 @@ class CasevacReport(google.protobuf.message.Message):
     def __init__(
         self,
         *,
-        precedence: global___CasevacReport.Precedence.ValueType = ...,
+        precedence: Global___CasevacReport.Precedence.ValueType = ...,
         equipment_flags: builtins.int = ...,
         litter_patients: builtins.int = ...,
         ambulatory_patients: builtins.int = ...,
-        security: global___CasevacReport.Security.ValueType = ...,
-        hlz_marking: global___CasevacReport.HlzMarking.ValueType = ...,
+        security: Global___CasevacReport.Security.ValueType = ...,
+        hlz_marking: Global___CasevacReport.HlzMarking.ValueType = ...,
         zone_marker: builtins.str = ...,
         us_military: builtins.int = ...,
         us_civilian: builtins.int = ...,
@@ -2945,16 +2945,16 @@ class CasevacReport(google.protobuf.message.Message):
         friendlies: builtins.str = ...,
         enemy: builtins.str = ...,
         hlz_remarks: builtins.str = ...,
-        zmist: collections.abc.Iterable[global___ZMistEntry] | None = ...,
+        zmist: collections.abc.Iterable[Global___ZMistEntry] | None = ...,
     ) -> None: ...
     def ClearField(self, field_name: typing.Literal["ambulatory_patients", b"ambulatory_patients", "child", b"child", "convenience_count", b"convenience_count", "enemy", b"enemy", "epw", b"epw", "equipment_detail", b"equipment_detail", "equipment_flags", b"equipment_flags", "frequency", b"frequency", "friendlies", b"friendlies", "hlz_marking", b"hlz_marking", "hlz_remarks", b"hlz_remarks", "litter_patients", b"litter_patients", "marked_by", b"marked_by", "medline_remarks", b"medline_remarks", "non_us_civilian", b"non_us_civilian", "non_us_military", b"non_us_military", "obstacles", b"obstacles", "precedence", b"precedence", "priority_count", b"priority_count", "routine_count", b"routine_count", "security", b"security", "terrain_flags", b"terrain_flags", "terrain_other_detail", b"terrain_other_detail", "terrain_slope_dir", b"terrain_slope_dir", "title", b"title", "urgent_count", b"urgent_count", "urgent_surgical_count", b"urgent_surgical_count", "us_civilian", b"us_civilian", "us_military", b"us_military", "winds_are_from", b"winds_are_from", "zmist", b"zmist", "zone_marker", b"zone_marker", "zone_protected_coord", b"zone_protected_coord"]) -> None: ...
 
-global___CasevacReport = CasevacReport
+Global___CasevacReport: typing_extensions.TypeAlias = CasevacReport
 
 @typing.final
 class ZMistEntry(google.protobuf.message.Message):
     """
-    Per-patient clinical summary record — one entry per patient in a CASEVAC.
+    Per-patient clinical summary record - one entry per patient in a CASEVAC.
     Maps directly to ATAK's <zMist> child element inside <zMistsMap>.
     All fields are optional free-text; senders populate what they have.
     """
@@ -2973,7 +2973,7 @@ class ZMistEntry(google.protobuf.message.Message):
     """
     z: builtins.str
     """
-    Zap number — unique patient tracking ID (often a terse code like
+    Zap number - unique patient tracking ID (often a terse code like
     "Gunshot" or a serial).
     """
     m: builtins.str
@@ -3004,7 +3004,7 @@ class ZMistEntry(google.protobuf.message.Message):
     ) -> None: ...
     def ClearField(self, field_name: typing.Literal["i", b"i", "m", b"m", "s", b"s", "t", b"t", "title", b"title", "z", b"z"]) -> None: ...
 
-global___ZMistEntry = ZMistEntry
+Global___ZMistEntry: typing_extensions.TypeAlias = ZMistEntry
 
 @typing.final
 class EmergencyAlert(google.protobuf.message.Message):
@@ -3058,7 +3058,7 @@ class EmergencyAlert(google.protobuf.message.Message):
     TYPE_FIELD_NUMBER: builtins.int
     AUTHORING_UID_FIELD_NUMBER: builtins.int
     CANCEL_REFERENCE_UID_FIELD_NUMBER: builtins.int
-    type: global___EmergencyAlert.Type.ValueType
+    type: Global___EmergencyAlert.Type.ValueType
     """
     Alert discriminator.
     """
@@ -3076,13 +3076,13 @@ class EmergencyAlert(google.protobuf.message.Message):
     def __init__(
         self,
         *,
-        type: global___EmergencyAlert.Type.ValueType = ...,
+        type: Global___EmergencyAlert.Type.ValueType = ...,
         authoring_uid: builtins.str = ...,
         cancel_reference_uid: builtins.str = ...,
     ) -> None: ...
     def ClearField(self, field_name: typing.Literal["authoring_uid", b"authoring_uid", "cancel_reference_uid", b"cancel_reference_uid", "type", b"type"]) -> None: ...
 
-global___EmergencyAlert = EmergencyAlert
+Global___EmergencyAlert: typing_extensions.TypeAlias = EmergencyAlert
 
 @typing.final
 class TaskRequest(google.protobuf.message.Message):
@@ -3094,7 +3094,7 @@ class TaskRequest(google.protobuf.message.Message):
     creation time; the fields below carry structured metadata the raw-detail
     fallback currently loses.
 
-    Fields are deliberately lean — this variant is closer to the MTU ceiling
+    Fields are deliberately lean - this variant is closer to the MTU ceiling
     than the others, so every string is capped in options.
     """
 
@@ -3170,8 +3170,8 @@ class TaskRequest(google.protobuf.message.Message):
     """
     UID of the assigned unit. Empty = unassigned / broadcast task.
     """
-    priority: global___TaskRequest.Priority.ValueType
-    status: global___TaskRequest.Status.ValueType
+    priority: Global___TaskRequest.Priority.ValueType
+    status: Global___TaskRequest.Status.ValueType
     note: builtins.str
     """
     Optional short note (reason, constraints, grid reference). Capped
@@ -3183,20 +3183,20 @@ class TaskRequest(google.protobuf.message.Message):
         task_type: builtins.str = ...,
         target_uid: builtins.str = ...,
         assignee_uid: builtins.str = ...,
-        priority: global___TaskRequest.Priority.ValueType = ...,
-        status: global___TaskRequest.Status.ValueType = ...,
+        priority: Global___TaskRequest.Priority.ValueType = ...,
+        status: Global___TaskRequest.Status.ValueType = ...,
         note: builtins.str = ...,
     ) -> None: ...
     def ClearField(self, field_name: typing.Literal["assignee_uid", b"assignee_uid", "note", b"note", "priority", b"priority", "status", b"status", "target_uid", b"target_uid", "task_type", b"task_type"]) -> None: ...
 
-global___TaskRequest = TaskRequest
+Global___TaskRequest: typing_extensions.TypeAlias = TaskRequest
 
 @typing.final
 class TAKEnvironment(google.protobuf.message.Message):
     """
     Weather annotation from <environment> CoT detail element.
 
-    Attaches to any TAKPacketV2 regardless of payload_variant — an Aircraft,
+    Attaches to any TAKPacketV2 regardless of payload_variant - an Aircraft,
     PLI, or Marker can all carry observed conditions at the emitting station.
     ATAK-CIV ships an XSD for <environment> but no dedicated handler, so the
     element round-trips through the generic detail pipeline; this message
@@ -3205,7 +3205,7 @@ class TAKEnvironment(google.protobuf.message.Message):
     Target wire cost: ~6-8 bytes compressed with a fully populated instance.
 
     Named `TAKEnvironment` (not just `Environment`) because the bare name
-    collides with `SwiftUI.Environment` — every SwiftUI view in a consuming
+    collides with `SwiftUI.Environment` - every SwiftUI view in a consuming
     iOS app uses the `@Environment` property wrapper, and importing the
     generated proto module would make `Environment` ambiguous in every one
     of those files. The `TAK` prefix matches the convention used by the
@@ -3244,7 +3244,7 @@ class TAKEnvironment(google.protobuf.message.Message):
     ) -> None: ...
     def ClearField(self, field_name: typing.Literal["temperature_c_x10", b"temperature_c_x10", "wind_direction_deg", b"wind_direction_deg", "wind_speed_cm_s", b"wind_speed_cm_s"]) -> None: ...
 
-global___TAKEnvironment = TAKEnvironment
+Global___TAKEnvironment: typing_extensions.TypeAlias = TAKEnvironment
 
 @typing.final
 class SensorFov(google.protobuf.message.Message):
@@ -3258,7 +3258,7 @@ class SensorFov(google.protobuf.message.Message):
     The receiving ATAK client restores those from its own defaults, same as
     every other CoT carried over Meshtastic today.
 
-    Attaches to any TAKPacketV2 — a PLI with a sensor on the operator's head,
+    Attaches to any TAKPacketV2 - a PLI with a sensor on the operator's head,
     an Aircraft with a FLIR turret, a Marker dropped on a UAV.
     Target wire cost: ~7-14 bytes compressed (dominated by model string).
     """
@@ -3312,7 +3312,7 @@ class SensorFov(google.protobuf.message.Message):
     ELEVATION_DEG_FIELD_NUMBER: builtins.int
     ROLL_DEG_FIELD_NUMBER: builtins.int
     MODEL_FIELD_NUMBER: builtins.int
-    type: global___SensorFov.SensorType.ValueType
+    type: Global___SensorFov.SensorType.ValueType
     azimuth_deg: builtins.int
     """
     Azimuth in whole degrees, 0-359. "Pointing direction" of the cone axis,
@@ -3322,7 +3322,7 @@ class SensorFov(google.protobuf.message.Message):
     range_m: builtins.int
     """
     Maximum range of the cone in meters.
-    Optional — if unset, receivers should use the ATAK-CIV default of 100m.
+    Optional - if unset, receivers should use the ATAK-CIV default of 100m.
     """
     fov_horizontal_deg: builtins.int
     """
@@ -3332,7 +3332,7 @@ class SensorFov(google.protobuf.message.Message):
     fov_vertical_deg: builtins.int
     """
     Vertical field of view in whole degrees. ATAK-CIV default is 45°.
-    Optional — a value of 0 means "not set / use horizontal FOV".
+    Optional - a value of 0 means "not set / use horizontal FOV".
     """
     elevation_deg: builtins.int
     """
@@ -3342,17 +3342,17 @@ class SensorFov(google.protobuf.message.Message):
     roll_deg: builtins.int
     """
     Roll (camera tilt) in whole degrees, -180 to +180.
-    Optional — use 0 if the sensor doesn't track roll.
+    Optional - use 0 if the sensor doesn't track roll.
     """
     model: builtins.str
     """
     Free-form device model identifier, e.g. "FLIR-Boson-640", "SEEK".
-    Optional — empty string means "unknown model" (ATAK-CIV default).
+    Optional - empty string means "unknown model" (ATAK-CIV default).
     """
     def __init__(
         self,
         *,
-        type: global___SensorFov.SensorType.ValueType = ...,
+        type: Global___SensorFov.SensorType.ValueType = ...,
         azimuth_deg: builtins.int = ...,
         range_m: builtins.int | None = ...,
         fov_horizontal_deg: builtins.int = ...,
@@ -3365,7 +3365,7 @@ class SensorFov(google.protobuf.message.Message):
     def ClearField(self, field_name: typing.Literal["_range_m", b"_range_m", "azimuth_deg", b"azimuth_deg", "elevation_deg", b"elevation_deg", "fov_horizontal_deg", b"fov_horizontal_deg", "fov_vertical_deg", b"fov_vertical_deg", "model", b"model", "range_m", b"range_m", "roll_deg", b"roll_deg", "type", b"type"]) -> None: ...
     def WhichOneof(self, oneof_group: typing.Literal["_range_m", b"_range_m"]) -> typing.Literal["range_m"] | None: ...
 
-global___SensorFov = SensorFov
+Global___SensorFov: typing_extensions.TypeAlias = SensorFov
 
 @typing.final
 class TakTalkMessage(google.protobuf.message.Message):
@@ -3373,7 +3373,7 @@ class TakTalkMessage(google.protobuf.message.Message):
     TAKTALK chat message payload (CoT type m-t-t).
 
     TAKTALK is an ATAK plugin for voice + text team messaging. The voice
-    audio stream goes over UDP/RTP and is NOT carried by the mesh — only
+    audio stream goes over UDP/RTP and is NOT carried by the mesh - only
     the text envelope (this message) is. `from_voice` marks messages sent
     via push-to-talk speech-to-text so receivers can render a mic icon
     next to the text.
@@ -3425,7 +3425,7 @@ class TakTalkMessage(google.protobuf.message.Message):
     ) -> None: ...
     def ClearField(self, field_name: typing.Literal["chatroom_id", b"chatroom_id", "from_voice", b"from_voice", "lang", b"lang", "text", b"text"]) -> None: ...
 
-global___TakTalkMessage = TakTalkMessage
+Global___TakTalkMessage: typing_extensions.TypeAlias = TakTalkMessage
 
 @typing.final
 class TakTalkRoomData(google.protobuf.message.Message):
@@ -3435,7 +3435,7 @@ class TakTalkRoomData(google.protobuf.message.Message):
     Announces a TAKTALK chatroom's friendly name and roster so peers can
     resolve room UUIDs (used in TakTalkMessage.chatroom_id and
     GeoChat.room_id) to a display name and participant list. Not a chat
-    message itself — these events are emitted by TAKTALK when rooms are
+    message itself - these events are emitted by TAKTALK when rooms are
     created or memberships change.
     """
 
@@ -3482,7 +3482,7 @@ class TakTalkRoomData(google.protobuf.message.Message):
     ) -> None: ...
     def ClearField(self, field_name: typing.Literal["participants", b"participants", "room_id", b"room_id", "room_name", b"room_name", "sender_callsign", b"sender_callsign"]) -> None: ...
 
-global___TakTalkRoomData = TakTalkRoomData
+Global___TakTalkRoomData: typing_extensions.TypeAlias = TakTalkRoomData
 
 @typing.final
 class Marti(google.protobuf.message.Message):
@@ -3511,7 +3511,7 @@ class Marti(google.protobuf.message.Message):
         primary-vs-cc distinction the same way ATAK does.
 
         If dest_callsign is [TAKPacketV2.callsign] (self-addressed, unusual but
-        legal — e.g. ATAK echoing back to its own room), the builder still emits
+        legal - e.g. ATAK echoing back to its own room), the builder still emits
         the element so loopback shapes round-trip cleanly.
         """
 
@@ -3522,7 +3522,7 @@ class Marti(google.protobuf.message.Message):
     ) -> None: ...
     def ClearField(self, field_name: typing.Literal["dest_callsign", b"dest_callsign"]) -> None: ...
 
-global___Marti = Marti
+Global___Marti: typing_extensions.TypeAlias = Marti
 
 @typing.final
 class TAKPacketV2(google.protobuf.message.Message):
@@ -3574,12 +3574,12 @@ class TAKPacketV2(google.protobuf.message.Message):
     TASK_FIELD_NUMBER: builtins.int
     TAKTALK_FIELD_NUMBER: builtins.int
     TAKTALK_ROOM_FIELD_NUMBER: builtins.int
-    cot_type_id: global___CotType.ValueType
+    cot_type_id: Global___CotType.ValueType
     """
     Well-known CoT event type enum.
     Use CotType_Other with cot_type_str for unknown types.
     """
-    how: global___CotHow.ValueType
+    how: Global___CotHow.ValueType
     """
     How the coordinates were generated
     """
@@ -3587,11 +3587,11 @@ class TAKPacketV2(google.protobuf.message.Message):
     """
     Callsign
     """
-    team: global___Team.ValueType
+    team: Global___Team.ValueType
     """
     Team color assignment
     """
-    role: global___MemberRole.ValueType
+    role: Global___MemberRole.ValueType
     """
     Role of the group member
     """
@@ -3626,11 +3626,11 @@ class TAKPacketV2(google.protobuf.message.Message):
     """
     Battery level 0-100
     """
-    geo_src: global___GeoPointSource.ValueType
+    geo_src: Global___GeoPointSource.ValueType
     """
     Geopoint source
     """
-    alt_src: global___GeoPointSource.ValueType
+    alt_src: Global___GeoPointSource.ValueType
     """
     Altitude source
     """
@@ -3689,11 +3689,11 @@ class TAKPacketV2(google.protobuf.message.Message):
     tools, and routes have dedicated variants below and should not land here.
     """
     @property
-    def environment(self) -> global___TAKEnvironment:
+    def environment(self) -> Global___TAKEnvironment:
         """--- Sensor / environment annotations ----------------------------------
 
         Both fields are OPTIONAL and attach to any payload_variant. They
-        describe observed conditions at the emitting station — a PLI with
+        describe observed conditions at the emitting station - a PLI with
         environment data, an Aircraft with a sensor cone, a Marker with both.
         Absent by default; presence is signaled by the message being non-null.
 
@@ -3704,13 +3704,13 @@ class TAKPacketV2(google.protobuf.message.Message):
         """
 
     @property
-    def sensor_fov(self) -> global___SensorFov:
+    def sensor_fov(self) -> Global___SensorFov:
         """
         Sensor field-of-view cone (camera, FLIR, laser, etc.). From <sensor>.
         """
 
     @property
-    def marti(self) -> global___Marti:
+    def marti(self) -> Global___Marti:
         """
         Directed-routing recipient list (CoT <marti><dest callsign='X'/>…</marti>).
         Empty / unset = broadcast to all peers (the default for situational-awareness
@@ -3723,63 +3723,63 @@ class TAKPacketV2(google.protobuf.message.Message):
         """
 
     @property
-    def chat(self) -> global___GeoChat:
+    def chat(self) -> Global___GeoChat:
         """
         ATAK GeoChat message
         """
 
     @property
-    def aircraft(self) -> global___AircraftTrack:
+    def aircraft(self) -> Global___AircraftTrack:
         """
         Aircraft track data (ADS-B, military air)
         """
 
     @property
-    def shape(self) -> global___DrawnShape:
+    def shape(self) -> Global___DrawnShape:
         """
         User-drawn tactical graphic: circle, rectangle, polygon, polyline,
         telestration, ranging circle, or bullseye. See DrawnShape.
         """
 
     @property
-    def marker(self) -> global___Marker:
+    def marker(self) -> Global___Marker:
         """
         Fixed point of interest: spot marker, waypoint, checkpoint, 2525
         symbol, or custom icon. See Marker.
         """
 
     @property
-    def rab(self) -> global___RangeAndBearing:
+    def rab(self) -> Global___RangeAndBearing:
         """
         Range and bearing measurement line. See RangeAndBearing.
         """
 
     @property
-    def route(self) -> global___Route:
+    def route(self) -> Global___Route:
         """
         Named route with ordered waypoints and control points. See Route.
         """
 
     @property
-    def casevac(self) -> global___CasevacReport:
+    def casevac(self) -> Global___CasevacReport:
         """
         9-line MEDEVAC request. See CasevacReport.
         """
 
     @property
-    def emergency(self) -> global___EmergencyAlert:
+    def emergency(self) -> Global___EmergencyAlert:
         """
         Emergency beacon / 911 alert. See EmergencyAlert.
         """
 
     @property
-    def task(self) -> global___TaskRequest:
+    def task(self) -> Global___TaskRequest:
         """
         Task / engage request. See TaskRequest.
         """
 
     @property
-    def taktalk(self) -> global___TakTalkMessage:
+    def taktalk(self) -> Global___TakTalkMessage:
         """
         TAKTALK chat message (CoT type m-t-t). See TakTalkMessage.
         Voice audio itself rides UDP/RTP outside the mesh; this carries the
@@ -3787,7 +3787,7 @@ class TAKPacketV2(google.protobuf.message.Message):
         """
 
     @property
-    def taktalk_room(self) -> global___TakTalkRoomData:
+    def taktalk_room(self) -> Global___TakTalkRoomData:
         """
         TAKTALK room/membership broadcast (CoT type y-). See TakTalkRoomData.
         Resolves room UUIDs (used in TakTalkMessage.chatroom_id and
@@ -3797,19 +3797,19 @@ class TAKPacketV2(google.protobuf.message.Message):
     def __init__(
         self,
         *,
-        cot_type_id: global___CotType.ValueType = ...,
-        how: global___CotHow.ValueType = ...,
+        cot_type_id: Global___CotType.ValueType = ...,
+        how: Global___CotHow.ValueType = ...,
         callsign: builtins.str = ...,
-        team: global___Team.ValueType = ...,
-        role: global___MemberRole.ValueType = ...,
+        team: Global___Team.ValueType = ...,
+        role: Global___MemberRole.ValueType = ...,
         latitude_i: builtins.int = ...,
         longitude_i: builtins.int = ...,
         altitude: builtins.int = ...,
         speed: builtins.int = ...,
         course: builtins.int = ...,
         battery: builtins.int = ...,
-        geo_src: global___GeoPointSource.ValueType = ...,
-        alt_src: global___GeoPointSource.ValueType = ...,
+        geo_src: Global___GeoPointSource.ValueType = ...,
+        alt_src: Global___GeoPointSource.ValueType = ...,
         uid: builtins.str = ...,
         device_callsign: builtins.str = ...,
         stale_seconds: builtins.int = ...,
@@ -3821,21 +3821,21 @@ class TAKPacketV2(google.protobuf.message.Message):
         phone: builtins.str = ...,
         cot_type_str: builtins.str = ...,
         remarks: builtins.str = ...,
-        environment: global___TAKEnvironment | None = ...,
-        sensor_fov: global___SensorFov | None = ...,
-        marti: global___Marti | None = ...,
-        chat: global___GeoChat | None = ...,
-        aircraft: global___AircraftTrack | None = ...,
+        environment: Global___TAKEnvironment | None = ...,
+        sensor_fov: Global___SensorFov | None = ...,
+        marti: Global___Marti | None = ...,
+        chat: Global___GeoChat | None = ...,
+        aircraft: Global___AircraftTrack | None = ...,
         raw_detail: builtins.bytes = ...,
-        shape: global___DrawnShape | None = ...,
-        marker: global___Marker | None = ...,
-        rab: global___RangeAndBearing | None = ...,
-        route: global___Route | None = ...,
-        casevac: global___CasevacReport | None = ...,
-        emergency: global___EmergencyAlert | None = ...,
-        task: global___TaskRequest | None = ...,
-        taktalk: global___TakTalkMessage | None = ...,
-        taktalk_room: global___TakTalkRoomData | None = ...,
+        shape: Global___DrawnShape | None = ...,
+        marker: Global___Marker | None = ...,
+        rab: Global___RangeAndBearing | None = ...,
+        route: Global___Route | None = ...,
+        casevac: Global___CasevacReport | None = ...,
+        emergency: Global___EmergencyAlert | None = ...,
+        task: Global___TaskRequest | None = ...,
+        taktalk: Global___TakTalkMessage | None = ...,
+        taktalk_room: Global___TakTalkRoomData | None = ...,
     ) -> None: ...
     def HasField(self, field_name: typing.Literal["_environment", b"_environment", "_marti", b"_marti", "_sensor_fov", b"_sensor_fov", "aircraft", b"aircraft", "casevac", b"casevac", "chat", b"chat", "emergency", b"emergency", "environment", b"environment", "marker", b"marker", "marti", b"marti", "payload_variant", b"payload_variant", "rab", b"rab", "raw_detail", b"raw_detail", "route", b"route", "sensor_fov", b"sensor_fov", "shape", b"shape", "taktalk", b"taktalk", "taktalk_room", b"taktalk_room", "task", b"task"]) -> builtins.bool: ...
     def ClearField(self, field_name: typing.Literal["_environment", b"_environment", "_marti", b"_marti", "_sensor_fov", b"_sensor_fov", "aircraft", b"aircraft", "alt_src", b"alt_src", "altitude", b"altitude", "battery", b"battery", "callsign", b"callsign", "casevac", b"casevac", "chat", b"chat", "cot_type_id", b"cot_type_id", "cot_type_str", b"cot_type_str", "course", b"course", "device_callsign", b"device_callsign", "emergency", b"emergency", "endpoint", b"endpoint", "environment", b"environment", "geo_src", b"geo_src", "how", b"how", "latitude_i", b"latitude_i", "longitude_i", b"longitude_i", "marker", b"marker", "marti", b"marti", "payload_variant", b"payload_variant", "phone", b"phone", "rab", b"rab", "raw_detail", b"raw_detail", "remarks", b"remarks", "role", b"role", "route", b"route", "sensor_fov", b"sensor_fov", "shape", b"shape", "speed", b"speed", "stale_seconds", b"stale_seconds", "tak_device", b"tak_device", "tak_os", b"tak_os", "tak_platform", b"tak_platform", "tak_version", b"tak_version", "taktalk", b"taktalk", "taktalk_room", b"taktalk_room", "task", b"task", "team", b"team", "uid", b"uid"]) -> None: ...
@@ -3848,4 +3848,4 @@ class TAKPacketV2(google.protobuf.message.Message):
     @typing.overload
     def WhichOneof(self, oneof_group: typing.Literal["payload_variant", b"payload_variant"]) -> typing.Literal["chat", "aircraft", "raw_detail", "shape", "marker", "rab", "route", "casevac", "emergency", "task", "taktalk", "taktalk_room"] | None: ...
 
-global___TAKPacketV2 = TAKPacketV2
+Global___TAKPacketV2: typing_extensions.TypeAlias = TAKPacketV2

@@ -4,6 +4,7 @@
 import base64
 import logging
 import time
+from threading import Event
 
 from typing import Optional, Union, List
 
@@ -189,7 +190,7 @@ class Node:
         """Block until radio config is received. Returns True if config has been received."""
         return self._timeout.waitForSet(self, attrs=("localConfig", attribute))
 
-    def writeConfig(self, config_name):
+    def writeConfig(self, config_name: str) -> Optional[admin_pb2.RadioModeStatus]:
         """Write the current (edited) localConfig to the device"""
         if self.localConfig is None:
             our_exit("Error: No localConfig has been read")
@@ -207,6 +208,8 @@ class Node:
         elif config_name == "display":
             p.set_config.display.CopyFrom(self.localConfig.display)
         elif config_name == "lora":
+            if self.localConfig.lora.HasField("radio_mode"):
+                self.validateRadioMode(self.localConfig.lora)
             p.set_config.lora.CopyFrom(self.localConfig.lora)
         elif config_name == "bluetooth":
             p.set_config.bluetooth.CopyFrom(self.localConfig.bluetooth)
@@ -254,7 +257,99 @@ class Node:
             onResponse = None
         else:
             onResponse = self.onAckNak
+        if config_name == "lora" and self.localConfig.lora.HasField("radio_mode"):
+            # A later status query cannot prove a same-mode tuning update was
+            # accepted. Wait for the status response correlated with this write.
+            status = self._requestRadioModeStatus(p)
+            if status.configured_mode != self.localConfig.lora.radio_mode:
+                self.localConfig.lora.radio_mode = status.configured_mode
+                raise RuntimeError("Firmware rejected the radio-mode update; previous mode retained")
+            return status
         self._sendAdmin(p, onResponse=onResponse)
+        return None
+
+    def getRadioModeStatus(self, timeout: float = 10.0) -> admin_pb2.RadioModeStatus:
+        """Read the local firmware's explicit radio-mode capability and runtime status.
+
+        An ACK or a firmware version string does not establish support: old firmware
+        can ignore unknown protobuf fields. Require the versioned status response.
+        """
+        if self is not self.iface.localNode:
+            raise ValueError("Radio-mode configuration is available only on the local node")
+        request = admin_pb2.AdminMessage(get_radio_mode_status_request=True)
+        return self._requestRadioModeStatus(request, timeout)
+
+    def _requestRadioModeStatus(
+        self, request: admin_pb2.AdminMessage, timeout: float = 10.0
+    ) -> admin_pb2.RadioModeStatus:
+        """Require a versioned status correlated with the query or configuration write."""
+        is_write = request.HasField("set_config")
+        missing_response = (
+            "Radio configuration save could not be verified; reconnect and inspect --radio-status"
+            if is_write else "Firmware did not return radio-mode status; support could not be verified"
+        )
+        done = Event()
+        status = admin_pb2.RadioModeStatus()
+        errors: List[str] = []
+
+        def on_status(packet: dict) -> None:
+            decoded = packet.get("decoded", {})
+            routing = decoded.get("routing")
+            if routing is not None:
+                reason = routing.get("errorReason", "NONE")
+                if reason != "NONE":
+                    rejected = "Firmware rejected the radio configuration" if is_write else "Firmware does not provide radio-mode status"
+                    errors.append(f"{rejected}: {reason}")
+                    done.set()
+                return
+            response = decoded.get("admin", {}).get("raw")
+            if response is not None and response.HasField("get_radio_mode_status_response"):
+                status.CopyFrom(response.get_radio_mode_status_response)
+            else:
+                errors.append(missing_response)
+            done.set()
+
+        sent = self._sendAdmin(request, wantResponse=True, onResponse=on_status)
+        if not done.wait(timeout):
+            if sent is not None:
+                self.iface.responseHandlers.pop(sent.id, None)
+            raise RuntimeError(missing_response)
+        if errors:
+            raise RuntimeError(errors[0])
+        if status.capability_version != 1:
+            raise RuntimeError("Firmware does not support this radio-mode configuration contract")
+        return status
+
+    def validateRadioMode(self, lora: config_pb2.Config.LoRaConfig) -> None:
+        """Preflight an explicit mode selection before sending configuration writes."""
+        if not lora.HasField("radio_mode"):
+            return
+        status = self.getRadioModeStatus()
+        if lora.radio_mode not in (config_pb2.Config.LoRaConfig.LORA, config_pb2.Config.LoRaConfig.FLRC):
+            raise ValueError("Unknown radio mode; select LORA or FLRC")
+        if lora.radio_mode == config_pb2.Config.LoRaConfig.FLRC:
+            if not status.flrc_supported:
+                raise ValueError("Firmware does not support FLRC on this hardware")
+            if lora.region != config_pb2.Config.LoRaConfig.US:
+                raise ValueError("FLRC requires region US; existing settings were retained")
+
+    def setRadioMode(self, mode: str) -> admin_pb2.RadioModeStatus:
+        """Save an explicit mode while retaining LoRa tuning; activation needs reboot."""
+        try:
+            selected = config_pb2.Config.LoRaConfig.RadioMode.Value(mode.upper())
+        except ValueError as ex:
+            raise ValueError("Unknown radio mode; select lora or flrc") from ex
+        previous = config_pb2.Config.LoRaConfig()
+        previous.CopyFrom(self.localConfig.lora)
+        self.localConfig.lora.radio_mode = selected
+        try:
+            status = self.writeConfig("lora")
+            if status is None:
+                raise RuntimeError("Firmware did not verify the radio configuration save")
+            return status
+        except Exception:
+            self.localConfig.lora.CopyFrom(previous)
+            raise
 
     def writeChannel(self, channelIndex, adminIndex=0):
         """Write the current (edited) channel to the device"""
@@ -430,7 +525,7 @@ class Node:
         s = s.replace("=", "").replace("+", "-").replace("/", "_")
         return f"https://meshtastic.org/v/#{s}"
 
-    def setURL(self, url: str, addOnly: bool = False):
+    def setURL(self, url: str, addOnly: bool = False) -> Optional[admin_pb2.RadioModeStatus]:
         """Set mesh network URL"""
         if self.localConfig is None or self.channels is None:
             our_exit("Warning: config or channels not loaded")
@@ -458,6 +553,8 @@ class Node:
 
         if len(channelSet.settings) == 0:
             our_exit("Warning: There were no settings.")
+
+        self.validateRadioMode(channelSet.lora_config)
 
         if addOnly:
             # Add new channels with names not already present
@@ -493,7 +590,14 @@ class Node:
         p = admin_pb2.AdminMessage()
         p.set_config.lora.CopyFrom(channelSet.lora_config)
         self.ensureSessionKey()
+        if channelSet.lora_config.HasField("radio_mode"):
+            status = self._requestRadioModeStatus(p)
+            if status.configured_mode != channelSet.lora_config.radio_mode:
+                raise RuntimeError("Firmware rejected the radio-mode update; previous mode retained")
+            self.localConfig.lora.CopyFrom(channelSet.lora_config)
+            return status
         self._sendAdmin(p)
+        return None
 
     def addContactURL(self, url: str):
         """Add a contact (User) to the NodeDB from a shareable URL"""

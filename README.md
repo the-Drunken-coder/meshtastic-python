@@ -27,6 +27,29 @@ This small library (and example application) provides an easy API for sending an
 It also provides access to any of the operations/data available in the device user interface or the Android application.
 Events are delivered using a publish-subscribe model, and you can subscribe to only the message types you are interested in.
 
+## W12 radio mode
+
+Compatible W12 firmware supports a fixed FLRC profile while retaining the `US` region and saved LoRa tuning.
+The CLI checks the firmware's explicit capability before writing the mode. Older firmware is rejected.
+
+```bash
+meshtastic --port /dev/ttyACM0 --radio-status
+meshtastic --port /dev/ttyACM0 --radio-mode flrc
+meshtastic --port /dev/ttyACM0 --reboot
+# Reconnect after restart and verify configured=FLRC, active=FLRC:
+meshtastic --port /dev/ttyACM0 --radio-status
+```
+
+Saving a mode leaves the active radio unchanged until restart. `--radio-mode flrc --reboot` saves before requesting
+restart. To restore the retained LoRa settings, use `--radio-mode lora --reboot`, then inspect `--radio-status` again.
+Use mode selection separately from other configuration writes. A legacy LoRa configuration that omits `radio_mode`
+preserves the saved selection; `radio_mode: LORA` explicitly requests LoRa.
+
+Status reports configured and active modes, restart state, active carrier and the transmission gate. Normal builds
+disable FLRC transmission pending RF approval. Experimental test firmware reports its TX opt-in separately;
+that flag does not establish RF acceptance. Invalid saved settings leave transmission disabled and can be corrected
+through the local CLI, followed by restart.
+
 ## Container usage
 
 Container images are published to GHCR for this repository. The container entrypoint defaults to running `meshtastic`,

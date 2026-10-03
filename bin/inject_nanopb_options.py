@@ -157,7 +157,22 @@ def inject_into_proto(
     if not specific and not wildcard:
         return content
 
-    lines = content.split("\n")
+    # Metadata field options can span lines and contain closing message braces.
+    # Keep the declaration together so those braces do not change nesting.
+    lines: List[str] = []
+    declaration: List[str] = []
+    declaration_with_options = re.compile(
+        r"^\s*(?:(?:optional\s+|repeated\s+)?[\w.]+\s+)?\w+\s*=\s*\d+\s*\["
+    )
+    for line in content.split("\n"):
+        if declaration or declaration_with_options.match(line):
+            declaration.append(line)
+            if re.search(r"\]\s*;\s*(?://.*)?$", line):
+                lines.append("\n".join(declaration))
+                declaration = []
+        else:
+            lines.append(line)
+    lines.extend(declaration)
 
     # Check if nanopb is already imported (after sed fixup, it will be
     # 'meshtastic/protobuf/nanopb.proto')
@@ -198,8 +213,9 @@ def inject_into_proto(
         r"([\w.]+)\s+"  # (3) field type (possibly qualified like google.protobuf.Any)
         r"(\w+)\s*"  # (4) field name
         r"=\s*(\d+)"  # (5) field number
-        r"(?:\s*\[([^\]]*)\])?"  # (6) existing options, without brackets
-        r"\s*;"  # trailing semicolon
+        r"(?:\s*\[(.*)\])?"  # (6) existing options, without brackets
+        r"\s*;",  # trailing semicolon
+        re.DOTALL,
     )
 
     for i, line in enumerate(lines):

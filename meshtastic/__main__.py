@@ -99,7 +99,7 @@ def onReceive(packet, interface) -> None:
                 rxChannel = packet.get("channel", 0)
                 targetChannel = int(args.ch_index or 0)
                 if rxChannel == targetChannel:
-                    rxSnr = packet["rxSnr"]
+                    rxSnr = "unavailable" if packet.get("rxSnrUnavailable") else packet.get("rxSnr", "unavailable")
                     hopLimit = packet["hopLimit"]
                     print(f"message: {msg}")
                     reply = f"got msg '{msg}' with rxSnr: {rxSnr} and hopLimit: {hopLimit}"
@@ -319,6 +319,35 @@ def setPref(config, comp_name, raw_val) -> bool:
     return True
 
 
+def printRadioModeStatus(status: admin_pb2.RadioModeStatus) -> None:
+    """Describe saved intent separately from the radio initialized at boot."""
+    modes = config_pb2.Config.LoRaConfig.RadioMode
+    configured = modes.Name(status.configured_mode) if status.configured_mode in modes.values() else "UNKNOWN"
+    active = modes.Name(status.active_mode) if status.active_mode in modes.values() else "UNKNOWN"
+    print(f"Radio mode: configured={configured}, active={active}")
+    print(f"FLRC supported: {'yes' if status.flrc_supported else 'no'}")
+    print(f"Restart pending: {'yes' if status.restart_pending else 'no'}")
+    print(f"Active radio initialized: {'yes' if status.active_initialized else 'no'}")
+    print(f"Active configuration valid: {'yes' if status.configuration_valid else 'no'}")
+    if status.active_initialized:
+        print(f"Active carrier: {status.carrier_mhz:.3f} MHz")
+    else:
+        print("Active carrier: unavailable")
+    reasons = {
+        admin_pb2.RadioModeStatus.NONE: "none",
+        admin_pb2.RadioModeStatus.INVALID_CONFIGURATION: "invalid saved configuration; correct mode/region and restart",
+        admin_pb2.RadioModeStatus.NOT_INITIALIZED: "radio initialization failed",
+        admin_pb2.RadioModeStatus.RF_APPROVAL_REQUIRED: "RF approval required",
+        admin_pb2.RadioModeStatus.TX_DISABLED: "saved TX preference disabled",
+    }
+    if status.transmit_allowed:
+        print("Transmission: enabled")
+    else:
+        print(f"Transmission: disabled ({reasons.get(status.blocked_reason, 'unknown firmware gate')})")
+    if status.experimental_tx_enabled:
+        print("Experimental FLRC TX firmware: enabled; RF acceptance remains unverified.")
+
+
 def onConnected(interface):
     """Callback invoked when we connect to a radio"""
     closeNow = False  # Should we drop the connection after we finish?
@@ -473,7 +502,7 @@ def onConnected(interface):
             # Must turn off encryption on primary channel
             interface.getNode(args.dest, **getNode_kwargs).turnOffEncryptionOnPrimaryChannel()
 
-        if args.reboot:
+        if args.reboot and not (args.radio_mode or args.set or args.configure):
             closeNow = True
             waitForAckNak = True
             interface.getNode(args.dest, False, **getNode_kwargs).reboot()
@@ -696,6 +725,19 @@ def onConnected(interface):
                         rhc.watchGPIOs(args.dest, bitmask)
                         time.sleep(1)
 
+        # Save the selected mode before an explicitly requested reboot.
+        if args.radio_mode or args.radio_status:
+            closeNow = True
+            node = interface.getNode(args.dest, False, **getNode_kwargs)
+            status = node.setRadioMode(args.radio_mode) if args.radio_mode else node.getRadioModeStatus()
+            printRadioModeStatus(status)
+            if args.radio_mode:
+                print("Radio mode saved. LoRa tuning and TX preference retained.")
+                if args.reboot:
+                    print("Reconnect with --radio-status after restart to verify the active mode.")
+                elif status.restart_pending:
+                    print("Restart required: run --reboot, then reconnect with --radio-status to verify.")
+
         # handle settings
         if args.set:
             closeNow = True
@@ -721,7 +763,16 @@ def onConnected(interface):
                             break
 
             if found:
+                if "lora" in fields:
+                    node.validateRadioMode(node.localConfig.lora)
                 print("Writing modified preferences to device")
+                if "lora" in fields and node.localConfig.lora.HasField("radio_mode"):
+                    # Explicit mode saves need a durable, correlated response.
+                    # Keep this write outside the transaction for other sections.
+                    status = node.writeConfig("lora")
+                    if status is not None:
+                        printRadioModeStatus(status)
+                    fields.remove("lora")
                 if len(fields) > 1:
                     print("Using a configuration transaction")
                     node.beginSettingsTransaction()
@@ -762,6 +813,10 @@ def onConnected(interface):
 
             profile = _read_profile(filename, fmt, seed_fn=_seed_config)
 
+            if profile.config.HasField("lora"):
+                interface.localNode.validateRadioMode(profile.config.lora)
+            write_lora_separately = profile.config.lora.HasField("radio_mode")
+
             closeNow = True
             interface.getNode(args.dest, False, **getNode_kwargs).beginSettingsTransaction()
 
@@ -787,11 +842,6 @@ def onConnected(interface):
                 interface.getNode(args.dest, False, **getNode_kwargs).setOwner(
                     long_name=long_name, short_name=short_name
                 )
-                time.sleep(0.5)
-
-            if profile.channel_url:
-                print(f"Setting channel url to {profile.channel_url}")
-                interface.getNode(args.dest, **getNode_kwargs).setURL(profile.channel_url)
                 time.sleep(0.5)
 
             if profile.canned_messages:
@@ -829,6 +879,8 @@ def onConnected(interface):
                 localConfig = interface.getNode(args.dest, **getNode_kwargs).localConfig
                 for field in profile.config.DESCRIPTOR.fields:
                     if field.message_type is not None and profile.config.HasField(field.name):
+                        if field.name == "lora" and write_lora_separately:
+                            continue
                         getattr(localConfig, field.name).CopyFrom(getattr(profile.config, field.name))
                         interface.getNode(args.dest, **getNode_kwargs).writeConfig(field.name)
                         time.sleep(0.5)
@@ -842,6 +894,17 @@ def onConnected(interface):
                         time.sleep(0.5)
 
             interface.getNode(args.dest, False, **getNode_kwargs).commitSettingsTransaction()
+            # A channel URL can also contain an explicit mode selection.
+            if profile.channel_url:
+                print(f"Setting channel url to {profile.channel_url}")
+                interface.getNode(args.dest, **getNode_kwargs).setURL(profile.channel_url)
+                time.sleep(0.5)
+            if write_lora_separately:
+                node = interface.localNode
+                node.localConfig.lora.CopyFrom(profile.config.lora)
+                status = node.writeConfig("lora")
+                if status is not None:
+                    printRadioModeStatus(status)
             print("Writing modified configuration to device")
 
         if args.export_config:
@@ -1182,6 +1245,12 @@ def onConnected(interface):
                     tunnel.Tunnel(interface, subnet=args.tunnel_net)
                 else:
                     tunnel.Tunnel(interface)
+
+        # Send restart after all configuration writes, including generic set/import.
+        if args.reboot and (args.radio_mode or args.set or args.configure):
+            closeNow = True
+            waitForAckNak = True
+            interface.getNode(args.dest, False, **getNode_kwargs).reboot()
 
         if args.ack or (args.dest != BROADCAST_ADDR and waitForAckNak):
             print(
@@ -1569,6 +1638,9 @@ def common():
             meshtastic.util.support_info()
             meshtastic.util.our_exit("", 0)
 
+        if args.radio_mode and (args.set or args.configure or args.begin_edit or args.commit_edit):
+            meshtastic.util.our_exit("ERROR: Use --radio-mode separately from other configuration writes")
+
         # Early validation for owner names before attempting device connection
         if hasattr(args, 'set_owner') and args.set_owner is not None:
             stripped_long_name = args.set_owner.strip()
@@ -1907,6 +1979,15 @@ def addConfigArgs(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     group = parser.add_argument_group(
         "Configuration",
         "Arguments that concern general configuration of Meshtastic devices",
+    )
+
+    group.add_argument(
+        "--radio-mode", choices=("lora", "flrc"),
+        help="Save the local radio mode, retaining LoRa settings. Requires compatible firmware; apply with --reboot.",
+    )
+    group.add_argument(
+        "--radio-status", action="store_true",
+        help="Read firmware support, configured/active modes, pending restart, carrier and transmission gate.",
     )
 
     group.add_argument(

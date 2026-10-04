@@ -66,7 +66,7 @@ class SerialHalCommand(google.protobuf.message.Message):
     """Host-assigned request id. Replies echo this id back in
     SerialHalResponse.transaction_id.
     """
-    type: global___SerialHalCommand.Type.ValueType
+    type: Global___SerialHalCommand.Type.ValueType
     pin: builtins.int
     value: builtins.int
     mode: builtins.int
@@ -75,7 +75,7 @@ class SerialHalCommand(google.protobuf.message.Message):
         self,
         *,
         transaction_id: builtins.int = ...,
-        type: global___SerialHalCommand.Type.ValueType = ...,
+        type: Global___SerialHalCommand.Type.ValueType = ...,
         pin: builtins.int = ...,
         value: builtins.int = ...,
         mode: builtins.int = ...,
@@ -83,7 +83,7 @@ class SerialHalCommand(google.protobuf.message.Message):
     ) -> None: ...
     def ClearField(self, field_name: typing.Literal["data", b"data", "mode", b"mode", "pin", b"pin", "transaction_id", b"transaction_id", "type", b"type", "value", b"value"]) -> None: ...
 
-global___SerialHalCommand = SerialHalCommand
+Global___SerialHalCommand: typing_extensions.TypeAlias = SerialHalCommand
 
 @typing.final
 class SerialHalResponse(google.protobuf.message.Message):
@@ -119,7 +119,7 @@ class SerialHalResponse(google.protobuf.message.Message):
     the device. In that case, the host should interpret value as the GPIO pin
     that triggered.
     """
-    result: global___SerialHalResponse.Result.ValueType
+    result: Global___SerialHalResponse.Result.ValueType
     value: builtins.int
     """Used by DIGITAL_READ replies and interrupt notifications. For interrupt
     notifications (transaction_id == 0), this carries the pin number.
@@ -130,11 +130,11 @@ class SerialHalResponse(google.protobuf.message.Message):
         self,
         *,
         transaction_id: builtins.int = ...,
-        result: global___SerialHalResponse.Result.ValueType = ...,
+        result: Global___SerialHalResponse.Result.ValueType = ...,
         value: builtins.int = ...,
         data: builtins.bytes = ...,
         error: builtins.str = ...,
     ) -> None: ...
     def ClearField(self, field_name: typing.Literal["data", b"data", "error", b"error", "result", b"result", "transaction_id", b"transaction_id", "value", b"value"]) -> None: ...
 
-global___SerialHalResponse = SerialHalResponse
+Global___SerialHalResponse: typing_extensions.TypeAlias = SerialHalResponse

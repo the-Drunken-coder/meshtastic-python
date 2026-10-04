@@ -41,6 +41,8 @@ fi
 
 # change the package names to meshtastic.protobuf
 $SEDCMD 's/^package meshtastic;/package meshtastic.protobuf;/' "${INDIR}/"*.proto
+# Metadata extensions use fully qualified names and follow the relocated package.
+$SEDCMD 's/\(meshtastic\./(meshtastic.protobuf./g' "${INDIR}/"*.proto
 # fix the imports to match
 $SEDCMD 's/^import "meshtastic\//import "meshtastic\/protobuf\//' "${INDIR}/"*.proto
 

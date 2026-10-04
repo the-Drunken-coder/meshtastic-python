@@ -640,7 +640,8 @@ def test_descriptor_multilevel_nested_route_link_uid():
 
 @pytest.mark.unit
 def test_descriptor_telemetry_environment_one_wire_temperature():
-    """EnvironmentMetrics.one_wire_temperature has max_count = 8 from telemetry.options."""
+    """The removed one-wire field remains wire-compatible but has no storage constraint."""
     env = telemetry_pb2.DESCRIPTOR.message_types_by_name["EnvironmentMetrics"]
     opts = _field_opts(env, "one_wire_temperature")
-    assert opts.max_count == 8
+    assert opts.max_count == 0
+    assert env.fields_by_name["one_wire_temperature"].GetOptions().deprecated

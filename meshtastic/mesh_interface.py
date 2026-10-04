@@ -356,7 +356,7 @@ class MeshInterface:  # pylint: disable=R0902
                     elif field == "since":
                         formatted_value = getTimeAgo(raw_value) or "N/A"
                     elif field == "snr":
-                        formatted_value = formatFloat(raw_value, 0, " dB")
+                        formatted_value = "N/A" if node.get("snrUnavailable") else formatFloat(raw_value, 0, " dB")
                     elif field == "user.shortName":
                         formatted_value = raw_value if raw_value is not None else f'Meshtastic {presumptive_id[-4:]}'
                     elif field == "user.id":

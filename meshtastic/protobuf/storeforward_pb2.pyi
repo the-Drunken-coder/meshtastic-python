@@ -303,7 +303,8 @@ class StoreAndForward(google.protobuf.message.Message):
     HISTORY_FIELD_NUMBER: builtins.int
     HEARTBEAT_FIELD_NUMBER: builtins.int
     TEXT_FIELD_NUMBER: builtins.int
-    rr: global___StoreAndForward.RequestResponse.ValueType
+    ORIGINAL_ID_FIELD_NUMBER: builtins.int
+    rr: Global___StoreAndForward.RequestResponse.ValueType
     """
     TODO: REPLACE
     """
@@ -311,20 +312,24 @@ class StoreAndForward(google.protobuf.message.Message):
     """
     Text from history message.
     """
+    original_id: builtins.int
+    """
+    Contains the original ID of the contained message.
+    """
     @property
-    def stats(self) -> global___StoreAndForward.Statistics:
+    def stats(self) -> Global___StoreAndForward.Statistics:
         """
         TODO: REPLACE
         """
 
     @property
-    def history(self) -> global___StoreAndForward.History:
+    def history(self) -> Global___StoreAndForward.History:
         """
         TODO: REPLACE
         """
 
     @property
-    def heartbeat(self) -> global___StoreAndForward.Heartbeat:
+    def heartbeat(self) -> Global___StoreAndForward.Heartbeat:
         """
         TODO: REPLACE
         """
@@ -332,14 +337,15 @@ class StoreAndForward(google.protobuf.message.Message):
     def __init__(
         self,
         *,
-        rr: global___StoreAndForward.RequestResponse.ValueType = ...,
-        stats: global___StoreAndForward.Statistics | None = ...,
-        history: global___StoreAndForward.History | None = ...,
-        heartbeat: global___StoreAndForward.Heartbeat | None = ...,
+        rr: Global___StoreAndForward.RequestResponse.ValueType = ...,
+        stats: Global___StoreAndForward.Statistics | None = ...,
+        history: Global___StoreAndForward.History | None = ...,
+        heartbeat: Global___StoreAndForward.Heartbeat | None = ...,
         text: builtins.bytes = ...,
+        original_id: builtins.int = ...,
     ) -> None: ...
     def HasField(self, field_name: typing.Literal["heartbeat", b"heartbeat", "history", b"history", "stats", b"stats", "text", b"text", "variant", b"variant"]) -> builtins.bool: ...
-    def ClearField(self, field_name: typing.Literal["heartbeat", b"heartbeat", "history", b"history", "rr", b"rr", "stats", b"stats", "text", b"text", "variant", b"variant"]) -> None: ...
+    def ClearField(self, field_name: typing.Literal["heartbeat", b"heartbeat", "history", b"history", "original_id", b"original_id", "rr", b"rr", "stats", b"stats", "text", b"text", "variant", b"variant"]) -> None: ...
     def WhichOneof(self, oneof_group: typing.Literal["variant", b"variant"]) -> typing.Literal["stats", "history", "heartbeat", "text"] | None: ...
 
-global___StoreAndForward = StoreAndForward
+Global___StoreAndForward: typing_extensions.TypeAlias = StoreAndForward

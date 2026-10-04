@@ -349,8 +349,8 @@ def test_generic_mode_write_is_durable_before_other_settings_transaction(monkeyp
     assert payloads.index("commit_edit_settings") < payloads.index("reboot_seconds")
 
 
-def test_import_saves_mode_after_committing_other_sections(monkeypatch, tmp_path):
-    """An imported explicit mode gets its own verified write outside staged edits."""
+def test_import_saves_mode_before_staging_other_sections(monkeypatch, tmp_path):
+    """An imported explicit mode is durably saved before staged edits."""
     profile = tmp_path / "radio.yaml"
     profile.write_text("config:\n  device:\n    role: CLIENT\n  lora:\n    region: US\n    radio_mode: FLRC\n")
     wire = AdminWire([
@@ -359,7 +359,8 @@ def test_import_saves_mode_after_committing_other_sections(monkeypatch, tmp_path
     run_cli(monkeypatch, wire, "--configure", str(profile), "--reboot")
     payloads = [p.WhichOneof("payload_variant") for p in wire.sent]
     mode_write = next(i for i, p in enumerate(wire.sent) if p.set_config.lora.HasField("radio_mode"))
-    assert payloads.index("commit_edit_settings") < mode_write < payloads.index("reboot_seconds")
+    assert mode_write < payloads.index("begin_edit_settings")
+    assert payloads.index("commit_edit_settings") < payloads.index("reboot_seconds")
 
 
 def test_channel_url_selection_cannot_bypass_verified_mode_save():
@@ -374,6 +375,7 @@ def test_channel_url_selection_cannot_bypass_verified_mode_save():
     with pytest.raises(RuntimeError, match="rejected the radio configuration"):
         wire.localNode.setURL(url)
     assert not wire.localNode.localConfig.lora.HasField("radio_mode")
+    assert all(not payload.HasField("set_channel") for payload in wire.sent)
 
 
 def test_node_signal_metadata_clears_unavailable_flag_when_lora_returns():
@@ -466,7 +468,7 @@ def test_explicit_remote_api_mode_write_is_rejected():
 
 
 @pytest.mark.parametrize("tuning", ["", "config:\n  lora:\n    modem_preset: LONG_FAST\n"])
-def test_import_url_mode_is_verified_after_transaction(monkeypatch, tmp_path, tuning):
+def test_import_url_mode_is_verified_before_transaction(monkeypatch, tmp_path, tuning):
     """A URL-only selection survives saved-mode seeding and explicit tuning overrides."""
     profile = tmp_path / "radio.yaml"
     url = channel_url(
@@ -489,7 +491,13 @@ def test_import_url_mode_is_verified_after_transaction(monkeypatch, tmp_path, tu
     assert writes[0].modem_preset == expected
     payloads = [p.WhichOneof("payload_variant") for p in wire.sent]
     assert payloads[0] == "get_radio_mode_status_request"
-    assert payloads.index("commit_edit_settings") < payloads.index("set_config") < payloads.index("reboot_seconds")
+    mode_write = next(
+        i for i, payload in enumerate(wire.sent)
+        if payload.HasField("set_config") and payload.set_config.lora.HasField("radio_mode")
+    )
+    assert mode_write < payloads.index("begin_edit_settings")
+    assert mode_write < payloads.index("set_channel")
+    assert payloads.index("commit_edit_settings") < payloads.index("reboot_seconds")
 
 
 def test_import_unsupported_url_mode_cannot_write_channels_or_start_edits(monkeypatch, tmp_path):
@@ -504,6 +512,71 @@ def test_import_unsupported_url_mode_cannot_write_channels_or_start_edits(monkey
         run_cli(monkeypatch, wire, "--configure", str(profile), "--reboot")
 
     assert [p.WhichOneof("payload_variant") for p in wire.sent] == ["get_radio_mode_status_request"]
+
+
+def test_rejected_import_mode_does_not_write_profile_sections_or_reboot(monkeypatch, tmp_path):
+    """A rejected mode leaves channels and profile sections untouched."""
+    profile = tmp_path / "radio.yaml"
+    url = channel_url(region=config_pb2.Config.LoRaConfig.US, radio_mode=config_pb2.Config.LoRaConfig.FLRC)
+    profile.write_text(
+        f"channel_url: {url}\nlong_name: New owner\n"
+        "config:\n  device:\n    role: CLIENT\n"
+    )
+    wire = AdminWire([status_reply(), status_reply(), "BAD_REQUEST"])
+    wire.localNode.channels = [channel_pb2.Channel(index=0)]
+    previous_lora = wire.localNode.localConfig.lora.SerializeToString()
+
+    with pytest.raises(SystemExit):
+        run_cli(monkeypatch, wire, "--configure", str(profile), "--reboot")
+
+    payloads = [payload.WhichOneof("payload_variant") for payload in wire.sent]
+    assert payloads == ["get_radio_mode_status_request", "get_radio_mode_status_request", "set_config"]
+    assert not any(payload.HasField("set_channel") for payload in wire.sent)
+    assert not any(payload.HasField("set_owner") for payload in wire.sent)
+    assert "begin_edit_settings" not in payloads
+    assert "commit_edit_settings" not in payloads
+    assert "reboot_seconds" not in payloads
+    assert wire.localNode.localConfig.lora.SerializeToString() == previous_lora
+
+
+def test_channel_url_mode_saves_before_channels_and_reboot(monkeypatch):
+    """A direct URL mode save precedes channel writes and requested reboot."""
+    url = channel_url(region=config_pb2.Config.LoRaConfig.US, radio_mode=config_pb2.Config.LoRaConfig.FLRC)
+    wire = AdminWire([
+        status_reply(), status_reply(configured_mode=1, restart_pending=True),
+    ])
+    wire.localNode.channels = [channel_pb2.Channel(index=0)]
+
+    run_cli(monkeypatch, wire, "--ch-set-url", url, "--reboot")
+
+    payloads = [payload.WhichOneof("payload_variant") for payload in wire.sent]
+    mode_write = next(
+        i for i, payload in enumerate(wire.sent)
+        if payload.HasField("set_config") and payload.set_config.lora.HasField("radio_mode")
+    )
+    assert mode_write < payloads.index("set_channel") < payloads.index("reboot_seconds")
+
+
+def test_add_channel_url_mode_saves_before_channels_and_reboot(monkeypatch):
+    """An add URL with a mode selection follows the same ordering guarantee."""
+    url = channel_url(region=config_pb2.Config.LoRaConfig.US, radio_mode=config_pb2.Config.LoRaConfig.FLRC)
+    url = url.replace("/e/#", "/e/?add=true#")
+    wire = AdminWire([
+        status_reply(), status_reply(configured_mode=1, restart_pending=True),
+    ])
+    wire.localNode.channels = [
+        channel_pb2.Channel(index=0),
+        channel_pb2.Channel(index=1, role=channel_pb2.Channel.Role.DISABLED),
+    ]
+
+    run_cli(monkeypatch, wire, "--ch-add-url", url, "--reboot")
+
+    payloads = [payload.WhichOneof("payload_variant") for payload in wire.sent]
+    mode_write = next(
+        i for i, payload in enumerate(wire.sent)
+        if payload.HasField("set_config") and payload.set_config.lora.HasField("radio_mode")
+    )
+    assert mode_write < payloads.index("set_channel") < payloads.index("reboot_seconds")
 
 
 def test_import_explicit_mode_overrides_url_mode(monkeypatch, tmp_path):

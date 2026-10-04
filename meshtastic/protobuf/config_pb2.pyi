@@ -1270,7 +1270,9 @@ class Config(google.protobuf.message.Message):
         class _RadioModeEnumTypeWrapper(google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[Config.LoRaConfig._RadioMode.ValueType], builtins.type):
             DESCRIPTOR: google.protobuf.descriptor.EnumDescriptor
             LORA: Config.LoRaConfig._RadioMode.ValueType  # 0
+            """Use the retained LoRa modem and frequency settings."""
             FLRC: Config.LoRaConfig._RadioMode.ValueType  # 1
+            """Use the fixed W12 FLRC profile, retaining LoRa settings for a later return."""
 
         class RadioMode(_RadioMode, metaclass=_RadioModeEnumTypeWrapper):
             """
@@ -1278,7 +1280,9 @@ class Config(google.protobuf.message.Message):
             """
 
         LORA: Config.LoRaConfig.RadioMode.ValueType  # 0
+        """Use the retained LoRa modem and frequency settings."""
         FLRC: Config.LoRaConfig.RadioMode.ValueType  # 1
+        """Use the fixed W12 FLRC profile, retaining LoRa settings for a later return."""
 
         class _RegionCode:
             ValueType = typing.NewType("ValueType", builtins.int)

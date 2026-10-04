@@ -270,7 +270,7 @@ class Node:
         if config_name == "lora" and radioMode:
             # A later status query cannot prove a same-mode tuning update was
             # accepted. Wait for the status response correlated with this write.
-            status = self._requestRadioModeStatus(p)
+            status = self._request_radio_mode_status(p)
             if status.configured_mode != self.localConfig.lora.radio_mode:
                 self.localConfig.lora.radio_mode = status.configured_mode
                 raise RuntimeError("Firmware rejected the radio-mode update; previous mode retained")
@@ -287,9 +287,9 @@ class Node:
         if self is not self.iface.localNode:
             raise ValueError("Radio-mode configuration is available only on the local node")
         request = admin_pb2.AdminMessage(get_radio_mode_status_request=True)
-        return self._requestRadioModeStatus(request, timeout)
+        return self._request_radio_mode_status(request, timeout)
 
-    def _requestRadioModeStatus(
+    def _request_radio_mode_status(
         self, request: admin_pb2.AdminMessage, timeout: float = 10.0
     ) -> admin_pb2.RadioModeStatus:
         """Require a versioned status correlated with the query or configuration write."""
@@ -574,6 +574,18 @@ class Node:
         if not channelOnly:
             self.validateRadioMode(channelSet.lora_config)
 
+        mode_status: Optional[admin_pb2.RadioModeStatus] = None
+        if not channelOnly and channelSet.lora_config.HasField("radio_mode"):
+            p = admin_pb2.AdminMessage()
+            p.set_config.lora.CopyFrom(channelSet.lora_config)
+            self.ensureSessionKey()
+            mode_status = self._request_radio_mode_status(p)
+            if mode_status.configured_mode != channelSet.lora_config.radio_mode:
+                raise RuntimeError("Firmware rejected the radio-mode update; previous mode retained")
+            # Do not expose a mode selection in the local cache until the
+            # correlated status response confirms that the firmware saved it.
+            self.localConfig.lora.CopyFrom(channelSet.lora_config)
+
         if addOnly:
             # Add new channels with names not already present
             # Don't change existing channels
@@ -608,15 +620,12 @@ class Node:
         if channelOnly:
             return None
 
+        if mode_status is not None:
+            return mode_status
+
         p = admin_pb2.AdminMessage()
         p.set_config.lora.CopyFrom(channelSet.lora_config)
         self.ensureSessionKey()
-        if channelSet.lora_config.HasField("radio_mode"):
-            status = self._requestRadioModeStatus(p)
-            if status.configured_mode != channelSet.lora_config.radio_mode:
-                raise RuntimeError("Firmware rejected the radio-mode update; previous mode retained")
-            self.localConfig.lora.CopyFrom(channelSet.lora_config)
-            return status
         self._sendAdmin(p)
         return None
 

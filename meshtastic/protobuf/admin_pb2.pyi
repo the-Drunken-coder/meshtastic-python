@@ -863,17 +863,27 @@ class RadioModeStatus(google.protobuf.message.Message):
     class _BlockedReasonEnumTypeWrapper(google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[RadioModeStatus._BlockedReason.ValueType], builtins.type):
         DESCRIPTOR: google.protobuf.descriptor.EnumDescriptor
         NONE: RadioModeStatus._BlockedReason.ValueType  # 0
+        """The current selection and transmit policy allow transmission."""
         INVALID_CONFIGURATION: RadioModeStatus._BlockedReason.ValueType  # 1
+        """The active or saved selection is incompatible with the board or region."""
         NOT_INITIALIZED: RadioModeStatus._BlockedReason.ValueType  # 2
+        """The active FLRC radio has not completed initialization."""
         RF_APPROVAL_REQUIRED: RadioModeStatus._BlockedReason.ValueType  # 3
+        """Standard FLRC firmware awaits measured RF approval."""
         TX_DISABLED: RadioModeStatus._BlockedReason.ValueType  # 4
+        """The saved transmit-enable preference is off."""
 
     class BlockedReason(_BlockedReason, metaclass=_BlockedReasonEnumTypeWrapper): ...
     NONE: RadioModeStatus.BlockedReason.ValueType  # 0
+    """The current selection and transmit policy allow transmission."""
     INVALID_CONFIGURATION: RadioModeStatus.BlockedReason.ValueType  # 1
+    """The active or saved selection is incompatible with the board or region."""
     NOT_INITIALIZED: RadioModeStatus.BlockedReason.ValueType  # 2
+    """The active FLRC radio has not completed initialization."""
     RF_APPROVAL_REQUIRED: RadioModeStatus.BlockedReason.ValueType  # 3
+    """Standard FLRC firmware awaits measured RF approval."""
     TX_DISABLED: RadioModeStatus.BlockedReason.ValueType  # 4
+    """The saved transmit-enable preference is off."""
 
     CAPABILITY_VERSION_FIELD_NUMBER: builtins.int
     FLRC_SUPPORTED_FIELD_NUMBER: builtins.int

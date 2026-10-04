@@ -502,7 +502,15 @@ def onConnected(interface):
             # Must turn off encryption on primary channel
             interface.getNode(args.dest, **getNode_kwargs).turnOffEncryptionOnPrimaryChannel()
 
-        if args.reboot and not (args.radio_mode or args.set or args.configure):
+        defer_reboot = bool(args.reboot and (
+            args.radio_mode
+            or args.set
+            or args.configure
+            or args.ch_set_url
+            or args.ch_add_url
+        ))
+
+        if args.reboot and not defer_reboot:
             closeNow = True
             waitForAckNak = True
             interface.getNode(args.dest, False, **getNode_kwargs).reboot()
@@ -845,6 +853,21 @@ def onConnected(interface):
             write_lora_separately = effective_lora.HasField("radio_mode")
 
             closeNow = True
+            if write_lora_separately:
+                # An explicit mode selection must be durably accepted before
+                # channels or any other profile sections are changed. It
+                # cannot be staged in the edit transaction because the
+                # correlated status response only proves a durable save.
+                previous_lora = config_pb2.Config.LoRaConfig()
+                previous_lora.CopyFrom(node.localConfig.lora)
+                node.localConfig.lora.CopyFrom(effective_lora)
+                try:
+                    status = node.writeConfig("lora", radioMode=True)
+                except Exception:
+                    node.localConfig.lora.CopyFrom(previous_lora)
+                    raise
+                if status is not None:
+                    printRadioModeStatus(status)
             interface.getNode(args.dest, False, **getNode_kwargs).beginSettingsTransaction()
 
             if profile.channel_url:
@@ -937,12 +960,6 @@ def onConnected(interface):
                         time.sleep(0.5)
 
             interface.getNode(args.dest, False, **getNode_kwargs).commitSettingsTransaction()
-            if write_lora_separately:
-                node = interface.localNode
-                node.localConfig.lora.CopyFrom(effective_lora)
-                status = node.writeConfig("lora", radioMode=True)
-                if status is not None:
-                    printRadioModeStatus(status)
             print("Writing modified configuration to device")
 
         if args.export_config:
@@ -1285,7 +1302,7 @@ def onConnected(interface):
                     tunnel.Tunnel(interface)
 
         # Send restart after all configuration writes, including generic set/import.
-        if args.reboot and (args.radio_mode or args.set or args.configure):
+        if defer_reboot:
             closeNow = True
             waitForAckNak = True
             interface.getNode(args.dest, False, **getNode_kwargs).reboot()

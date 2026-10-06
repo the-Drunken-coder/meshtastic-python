@@ -292,6 +292,16 @@ def test_Timeout_waitForAckNak_found():
 
 
 @pytest.mark.unit
+def test_Timeout_waitForAckNak_can_preserve_outcome():
+    """Callers can inspect the ACK/NAK flags before clearing them."""
+    to = Timeout(0.01)
+    ack = Acknowledgment()
+    ack.receivedNak = True
+    assert to.waitForAckNak(ack, reset=False) is True
+    assert ack.receivedNak is True
+
+
+@pytest.mark.unit
 @patch("meshtastic.util.time.sleep")
 def test_Timeout_waitForAckNak_not_found(mock_sleep):  # pylint: disable=unused-argument
     """waitForAckNak returns False when no acknowledgment attr is set."""

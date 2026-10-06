@@ -215,13 +215,23 @@ class Timeout:
         return False
 
     def waitForAckNak(
-        self, acknowledgment, attrs=("receivedAck", "receivedNak", "receivedImplAck")
+        self,
+        acknowledgment,
+        attrs=("receivedAck", "receivedNak", "receivedImplAck"),
+        reset=True,
     ) -> bool:
-        """Block until an ACK or NAK has been received. Returns True if ACK or NAK has been received."""
+        """Block until an ACK or NAK has been received.
+
+        Returns True if an ACK or NAK has been received. By default the
+        acknowledgement flags are cleared after detection. Callers that need
+        to distinguish the outcome can defer that reset until they have read
+        the flags.
+        """
         self.reset()
         while time.time() < self.expireTime:
             if any(map(lambda a: getattr(acknowledgment, a, None), attrs)):
-                acknowledgment.reset()
+                if reset:
+                    acknowledgment.reset()
                 return True
             time.sleep(self.sleepInterval)
         return False

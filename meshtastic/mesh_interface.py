@@ -1055,6 +1055,23 @@ class MeshInterface:  # pylint: disable=R0902
                 "Timed out waiting for an acknowledgment"
             )
 
+    def waitForAckNakStatus(self) -> bool:
+        """Wait for an ACK or NAK and return whether the result was an ACK.
+
+        The existing ``waitForAckNak`` API intentionally treats either
+        response as completion. CLI callers need the response kind so a NAK
+        can produce a failing process status without changing that API's
+        behavior for library callers.
+        """
+        success = self._timeout.waitForAckNak(self._acknowledgment, reset=False)
+        received_nak = self._acknowledgment.receivedNak
+        self._acknowledgment.reset()
+        if not success:
+            raise MeshInterface.MeshInterfaceError(
+                "Timed out waiting for an acknowledgment"
+            )
+        return not received_nak
+
     def waitForTraceRoute(self, waitFactor):
         """Wait for trace route"""
         success = self._timeout.waitForTraceRoute(waitFactor, self._acknowledgment)

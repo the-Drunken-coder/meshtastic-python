@@ -910,6 +910,102 @@ def test_main_sendtext_with_dest(mock_findPorts, mock_serial, mocked_open, mock_
             assert re.search(r"Warning: There were no self.nodes.", caplog.text, re.MULTILINE)
             assert err == ""
 
+
+@pytest.mark.unit
+@pytest.mark.usefixtures("reset_mt_config")
+def test_main_sendtext_nak_returns_failure(capsys):
+    """A routing NAK must make the sendtext CLI exit unsuccessfully."""
+    sys.argv = ["", "--sendtext", "hello", "--dest", "!12345678", "--ack"]
+    mt_config.args = sys.argv
+
+    iface = MeshInterface(noProto=True)
+    iface.devPath = "/dev/fake"
+    iface.localNode.channels = [
+        Channel(role=Channel.Role.PRIMARY),
+    ]
+
+    def send_text(*_args, onResponse=None, **_kwargs):
+        onResponse(
+            {
+                "decoded": {
+                    "routing": {"errorReason": "MAX_RETRANSMIT"},
+                },
+            }
+        )
+
+    iface.sendText = send_text
+
+    with patch("meshtastic.serial_interface.SerialInterface", return_value=iface):
+        with pytest.raises(SystemExit) as raised:
+            main()
+
+    assert raised.value.code == 1
+    out, err = capsys.readouterr()
+    assert "Received a NAK, error reason: MAX_RETRANSMIT" in out
+    assert err == ""
+
+
+@pytest.mark.unit
+@pytest.mark.usefixtures("reset_mt_config")
+def test_main_sendtext_ack_returns_success(capsys):
+    """A routing ACK must keep the sendtext CLI successful."""
+    sys.argv = ["", "--sendtext", "hello", "--dest", "!12345678", "--ack"]
+    mt_config.args = sys.argv
+
+    iface = MeshInterface(noProto=True)
+    iface.devPath = "/dev/fake"
+    iface.localNode.channels = [
+        Channel(role=Channel.Role.PRIMARY),
+    ]
+
+    def send_text(*_args, onResponse=None, **_kwargs):
+        onResponse(
+            {
+                "from": 123,
+                "decoded": {
+                    "routing": {"errorReason": "NONE"},
+                },
+            }
+        )
+
+    iface.sendText = send_text
+
+    with patch("meshtastic.serial_interface.SerialInterface", return_value=iface):
+        main()
+
+    out, err = capsys.readouterr()
+    assert "Received an ACK." in out
+    assert err == ""
+
+
+@pytest.mark.unit
+@pytest.mark.usefixtures("reset_mt_config")
+def test_main_sendtext_timeout_remains_failure(capsys):
+    """A sendtext acknowledgement timeout must remain a CLI failure."""
+    sys.argv = ["", "--sendtext", "hello", "--dest", "!12345678", "--ack"]
+    mt_config.args = sys.argv
+
+    iface = MeshInterface(noProto=True, timeout=0)
+    iface.devPath = "/dev/fake"
+    iface.localNode.channels = [
+        Channel(role=Channel.Role.PRIMARY),
+    ]
+
+    def send_text(*_args, **_kwargs):
+        return None
+
+    iface.sendText = send_text
+
+    with patch("meshtastic.serial_interface.SerialInterface", return_value=iface):
+        with pytest.raises(SystemExit) as raised:
+            main()
+
+    assert raised.value.code == 1
+    out, err = capsys.readouterr()
+    assert "Aborting due to: Timed out waiting for an acknowledgment" in out
+    assert err == ""
+
+
 @pytest.mark.unit
 @pytest.mark.usefixtures("reset_mt_config")
 def test_main_removeposition_remote(capsys):

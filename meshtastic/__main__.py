@@ -1311,7 +1311,13 @@ def onConnected(interface):
             print(
                 f"Waiting for an acknowledgment from remote node (this could take a while)"
             )
-            interface.getNode(args.dest, False, **getNode_kwargs).iface.waitForAckNak()
+            acked = interface.getNode(
+                args.dest, False, **getNode_kwargs
+            ).iface.waitForAckNakStatus()
+            if not acked:
+                meshtastic.util.our_exit(
+                    "Received a NAK; the operation was not confirmed.", 1
+                )
 
         if args.wait_to_disconnect:
             print(f"Waiting {args.wait_to_disconnect} seconds before disconnecting")

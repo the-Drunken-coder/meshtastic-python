@@ -2,6 +2,7 @@
 """
 # pylint: disable=R0917,C0302
 
+import base64
 import collections
 import json
 import logging
@@ -48,6 +49,14 @@ from meshtastic.util import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+def _json_default(value: object) -> str:
+    """Encode byte values the same way protobuf JSON does."""
+    if isinstance(value, (bytes, bytearray, memoryview)):
+        return base64.b64encode(value).decode("ascii")
+    raise TypeError(f"Object of type {type(value).__name__} is not JSON serializable")
+
 
 def _timeago(delta_secs: int) -> str:
     """Convert a number of seconds in the past into a short, friendly string
@@ -220,7 +229,9 @@ class MeshInterface:  # pylint: disable=R0902
                 # use id as dictionary key for correct json format in list of nodes
                 nodeid = n2["user"]["id"]
                 nodes[nodeid] = n2
-        infos = owner + myinfo + metadata + mesh + json.dumps(nodes, indent=2)
+        infos = owner + myinfo + metadata + mesh + json.dumps(
+            nodes, indent=2, default=_json_default
+        )
         print(infos)
         return infos
 
